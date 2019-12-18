@@ -18,24 +18,25 @@ matRad_rc
 % load patient data, i.e. ct, voi, cst
 
 %load HEAD_AND_NECK
-load TG119.mat
+% load TG119.mat
+load slabPhantom1.mat
 % load PROSTATE.mat
 %load LIVER.mat
 % load BOXPHANTOM
 % load BOXPHANTOMv3.mat
 % load BOXPHANTOM_NARROW_NEW.mat
 % load phantomTest.mat
-ds
+
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     % either photons / protons / carbon
-pln.machine         = 'generic_TOPAS_cropped';
+pln.machine         = 'generic_MCsquare';
 
 pln.numOfFractions  = 30;
 
 % beam geometry settings
-pln.propStf.bixelWidth      = 50; % [mm] / also corresponds to lateral spot spacing for particles
-pln.propStf.longitudinalSpotSpacing = 50;
+pln.propStf.bixelWidth      = 10; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.longitudinalSpotSpacing = 10;
 pln.propStf.gantryAngles    = 0; % [?] 
 pln.propStf.couchAngles     = 0; % [?]
 pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
@@ -56,8 +57,8 @@ pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't /
 
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
-% load protons_HITfixedBL
-% stf.ray.energy = machine.data(1).energy;
+% load protons_generic_MCsquare
+% stf.ray.energy = machine.data(30).energy;
 % stf.ray.focusIx = 1;
 
 %% dose calculation
@@ -67,7 +68,7 @@ if strcmp(pln.radiationMode,'photons')
 elseif strcmp(pln.radiationMode,'protons') || strcmp(pln.radiationMode,'carbon')
     
    dij = matRad_calcParticleDose(ct,stf,pln,cst);
-    dijMC = matRad_calcParticleDoseMC(ct,stf,pln,cst,100000);
+    dijMC = matRad_calcParticleDoseMC(ct,stf,pln,cst,1000000);
 %     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum(stf(:).totalNumOfBixels),1),100000);
    
 end

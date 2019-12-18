@@ -12,26 +12,26 @@ vars.geoShape = "Rectangle";
 
 % size of the slab and alignment
 
-slabYs = 0:3; % size of slab in y axis
-slabXs = 11:18; % use this to take the slab in and out of the beam
-                % as we discussed, there is no size parameter in x axis
-slabZs = 0:3; % size of slab in z axis
+slabYs = 3;     %0:3;   % size of slab in y axis
+slabXs = 15;    %11:18; % use this to take the slab in and out of the beam
+                        % as we discussed, there is no size parameter in x axis
+slabZs = 3;     %0:3;   % size of slab in z axis
 
 
-alignmentsX = -35:-10; % alignment in the beam direction(slab up and down)
+alignmentsX =  -10;     %-35:-10; % alignment in the beam direction(slab up and down)
                        % -10 so that it does not stand in the bragg peak
                        % lower range depends on the energy of the particle
                        
 
 vars.alignment = [0 -15 0]; % hard coded stuff!
-vars.alignment(1) = randsample(alignmentsX,1);
+vars.alignment(1) = alignmentsX;
 
 % as I said, not very smart way to approach the problem!
 
-vars.geoSize(1) = randsample(slabYs,1); 
-vars.geoSize(2) = randsample(slabXs,1); 
-vars.geoSize(3) = randsample(slabZs,1);
-% vars.geoSize = [3 11 3];
+% vars.geoSize(1) = randsample(slabYs,1); 
+% vars.geoSize(2) = randsample(slabXs,1); 
+% vars.geoSize(3) = randsample(slabZs,1);
+vars.geoSize = [slabYs slabXs slabZs];
 
 
 vars.slab_sp = 2; % stopping power of the slab

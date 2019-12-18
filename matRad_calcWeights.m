@@ -1,4 +1,4 @@
-function [weights, xPos, yPos] = matRad_calcWeights(sigma, mu, N, sigmaSub)
+function [weights, xPos, yPos] = matRad_calcWeights(sigma, N, sigmaSub)
 % Russo splitting
 
 sigmaDach = sqrt(sigma^2 - sigmaSub^2);
@@ -10,8 +10,8 @@ gri = zeros(N,1);
 coord = zeros(N,1);
 count = 1;
 for i = -(N - 1) / 2 : (N - 1) / 2
-    gri(count)  = weight(mu, sigmaDach, i, deltaR);
-    coord(count) = mu + i * deltaR;
+    gri(count)  = weight(0, sigmaDach, i, deltaR);
+    coord(count) = i * deltaR;
     count = count + 1;
 end
 
