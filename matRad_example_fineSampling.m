@@ -21,7 +21,7 @@ matRad_rc
 % load TG119.mat
 load slabPhantom1.mat
 % load PROSTATE.mat
-%load LIVER.mat
+% load LIVER.mat
 % load BOXPHANTOM
 % load BOXPHANTOMv3.mat
 % load BOXPHANTOM_NARROW_NEW.mat
@@ -35,8 +35,8 @@ pln.machine         = 'generic_MCsquare';
 pln.numOfFractions  = 30;
 
 % beam geometry settings
-pln.propStf.bixelWidth      = 10; % [mm] / also corresponds to lateral spot spacing for particles
-pln.propStf.longitudinalSpotSpacing = 10;
+pln.propStf.bixelWidth      = 200; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.longitudinalSpotSpacing = 200;
 pln.propStf.gantryAngles    = 0; % [?] 
 pln.propStf.couchAngles     = 0; % [?]
 pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
@@ -57,46 +57,45 @@ pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't /
 
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
-% load protons_generic_MCsquare
-% stf.ray.energy = machine.data(30).energy;
-% stf.ray.focusIx = 1;
+stf = matRad_computeSSD(stf,ct);
+load protons_generic_MCsquare;
+stf.ray.energy = machine.data(30).energy;
+
+% stf = matRad_splitBeam(stf, machine);
+
+
+% 
+%  % calculate dose
+%  figure
+% for i = 1:stf.numOfRays
+%     [alphas,l,rho,d12,ix] = matRad_siddonRayTracer(stf.isoCenter,ct.resolution,...
+%                                     stf.ray(i).rayPos,stf.ray(i).targetPoint,ct.cube);
+%      plot(cumsum(rho{1}));
+%      display(stf.ray(i).targetPoint(2));
+%      hold on   
+% end
+% hold off
+% dose = matRad_calcParticleDoseBixel(radDepths, radialDist_sq, sigmaIni_sq, baseData);                                
 
 %% dose calculation
-if strcmp(pln.radiationMode,'photons')
-    dij = matRad_calcPhotonDose(ct,stf,pln,cst);
-    %dij = matRad_calcPhotonDoseVmc(ct,stf,pln,cst);
-elseif strcmp(pln.radiationMode,'protons') || strcmp(pln.radiationMode,'carbon')
-    
    dij = matRad_calcParticleDose(ct,stf,pln,cst);
-    dijMC = matRad_calcParticleDoseMC(ct,stf,pln,cst,1000000);
-%     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum(stf(:).totalNumOfBixels),1),100000);
-   
-end
+%     dijMC = matRad_calcParticleDoseMC(ct,stf,pln,cst,1000000);
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum(stf(:).totalNumOfBixels),1),1000000);
 
-resultGUI = matRad_calcCubes(ones(dij.totalNumOfBixels,1),dij);
-resultGUI_MC = matRad_calcCubes(resultGUI.w,dijMC);
+% w  = [stf.ray(:).weight]';
+w = ones(size(stf.numOfRays));
+% w(1) = 1;
+resultGUI = matRad_calcCubes(w,dij);
 
-resultGUI.physicalDose_MC = resultGUI_MC.physicalDose;
-% resultGUI.physicalDose_diff = (resultGUI.physicalDose - resultGUI.physicalDose_MC);
-
-mcDose = reshape(resultGUI.physicalDose_MC, ct.cubeDim);
-anaDose = reshape(resultGUI.physicalDose, ct.cubeDim);
 % 
-anaIDD = sum(sum(anaDose,2),3);
-mcIDD  = sum(sum(mcDose,2),3);
-
-plot(anaIDD);
-hold on
-plot(mcIDD)
-hold off
-
-% figure
-% plot(reshape(anaDose(1,125,:),250,1));
-% hold on
-% plot(reshape(mcDose(1,125,:),250,1));
-% hold off
+% stf = matRad_splitBeam(stf, machine);
+% dij = matRad_calcParticleDose(ct,stf,pln,cst);
+% w  = [stf.ray(:).weight]';
+% resultGUI_FS = matRad_calcCubes(w,dij);
 
 
 
-[gammaCube,gammaPassRateCell] = matRad_gammaIndex(mcDose,anaDose,[ct.resolution.x,ct.resolution.y,ct.resolution.z],[2,2],round(ct.cubeDim(3)/2),3,'global',cst);
+imagesc(resultGUI.physicalDose(40:120,40:120,80));
+figure
+imagesc(resultGUI_MC.physicalDose(40:120,40:120,80));
 
