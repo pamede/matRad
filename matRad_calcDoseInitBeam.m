@@ -43,13 +43,17 @@ geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
 
 % Calculate radiological depth cube
 fprintf('matRad: calculate radiological depth cube...');
-radDepthVctGrid = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
+[radDepthCUBEctGrid, radDepthVctGrid] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
+
 fprintf('done.\n');
 
 % interpolate radiological depth cube to dose grid resolution
 radDepthVdoseGrid = matRad_interpRadDepth...
     (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,radDepthVctGrid);
  
+radDepthCUBEdoseGrid = matRad_interpRadDepth...
+    (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,radDepthCUBEctGrid);
+
 % limit rotated coordinates to positions where ray tracing is availabe
 rot_coordsVdoseGrid = rot_coordsVdoseGrid(~isnan(radDepthVdoseGrid{1}),:);
  
