@@ -21,6 +21,8 @@ if isfield(pln.propDoseCalc,'fineSampling') && strcmp(pln.radiationMode, 'proton
     else
         fineSamplingMethod = 'russo';
     end
+elseif isfield(pln.propDoseCalc,'stdCorr') && strcmp(pln.radiationMode, 'protons')
+    anaMode = 'stdCorr';
 else
     anaMode = 'standard';
 end
