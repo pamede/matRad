@@ -37,3 +37,10 @@ basedata/protons_matRadBDLcorrected.mat
 phantoms/slabPhantom7.mat
 calculatingWeights.asv
 .gitignore
+scenarios/alderson01.mat
+scenarios/alderson01MC.mat
+scenarios/liver01.mat
+scenarios/lung01.mat
+scenarios/lung01MC.mat
+scenarios/lung02.mat
+scenarios/prostate01.mat
