@@ -78,7 +78,7 @@ if strcmp(anaMode, 'stdCorr')
         if isnan(dist)
             sigma = 0;
         else
-            sigma = 5 * (distSlice/150);
+            sigma = 1 * (distSlice/150);
 %             sigma = sqrt(counting);
         end
         kernel = matRad_create2dimGaussKernel(kernelSize, sigma, res);
@@ -90,28 +90,9 @@ if strcmp(anaMode, 'stdCorr')
         cStdCtGrid(ii,:,:)   = tmpCstd((kernelSize+1)/2:size(tmpCstd,1)-(kernelSize-1)/2,(kernelSize+1)/2:size(tmpCstd,2)-(kernelSize-1)/2);
         meanRadDepths(ii,:,:) = tmpRadDepth((kernelSize+1)/2:size(tmpRadDepth,1)-(kernelSize-1)/2,(kernelSize+1)/2:size(tmpRadDepth,2)-(kernelSize-1)/2);    
     end
-
-%     assignin('base','cStdCtGrid',cStdCtGrid);
-    assignin('base','meanRadDepths',meanRadDepths);
-%     assignin('base','radDepthCubeCtGrid',cube);
-    
-    cStdCtGrid(isnan(cStdCtGrid)) = 0;
-    cStdVctGrid = {cStdCtGrid(VctGrid)};
-  
-    meanRadDepths = meanRadDepths(VctGrid);
-    
-    cSstVdoseGrid = matRad_interpRadDepth...
-    (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,cStdVctGrid);
+    meanRadDepths = reshape(meanRadDepths, prod(ct.cubeDim),1);
+    cStdCtGrid = sqrt(reshape(cStdCtGrid, prod(ct.cubeDim),1));
 end
-
-assignin('base','radDepths', reshape(radDepthVctGrid{1}, ct.cubeDim));
-
-
-
-
-
-
-
 
 fprintf('done.\n');
 

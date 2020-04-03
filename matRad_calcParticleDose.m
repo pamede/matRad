@@ -181,6 +181,17 @@ for i = 1:length(stf) % loop over all beams
                         error('Problem with chosen sub beam sigma in fine sampling calculation');
                     end
                 end
+            elseif strcmp(anaMode, 'stdCorr')
+                % Ray tracing for beam i and ray j
+                [ix,currRadialDist_sq,~,~,~,~] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
+                                                     stf(i).sourcePoint_bev, ...
+                                                     stf(i).ray(j).targetPoint_bev, ...
+                                                     machine.meta.SAD, ...
+                                                     find(~isnan(radDepthVdoseGrid{1})), ...
+                                                     maxLateralCutoffDoseCalc);
+                                                                                  
+                radDepths = meanRadDepths(ix); 
+                cStds     = cStdCtGrid(ix);
             else
                 % Ray tracing for beam i and ray j
                 [ix,currRadialDist_sq,~,~,~,~] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
@@ -190,8 +201,9 @@ for i = 1:length(stf) % loop over all beams
                                                      find(~isnan(radDepthVdoseGrid{1})), ...
                                                      maxLateralCutoffDoseCalc);
                                                                                   
-                radDepths = radDepthVdoseGrid{1}(ix); 
+                radDepths = radDepthVdoseGrid{1}(ix);     
             end
+            
                    
             % just use tissue classes of voxels found by ray tracer
             if (isequal(pln.propOpt.bioOptimization,'LEMIV_effect') || isequal(pln.propOpt.bioOptimization,'LEMIV_RBExD')) ... 
@@ -276,6 +288,9 @@ for i = 1:length(stf) % loop over all beams
 
                     % adjust radDepth according to range shifter
                     currRadDepths = radDepths(currIx) + stf(i).ray(j).rangeShifter(k).eqThickness;
+                    if strcmp(anaMode, 'stdCorr')
+                        currCstds     = cStds(currIx);
+                    end
 
                     % calculate initial focus sigma
                     sigmaIni = matRad_interp1(machine.data(energyIx).initFocus.dist (stf(i).ray(j).focusIx(k),:)', ...
@@ -313,6 +328,22 @@ for i = 1:length(stf) % loop over all beams
                     end
                     
                     doseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} = sparse(VdoseGrid(ix),1,totalDose,dij.doseGrid.numOfVoxels,1);
+                elseif strcmp(anaMode, 'stdCorr')
+                    % calculate particle dose for bixel k on ray j of beam i
+                    bixelDose = matRad_calcParticleDoseBixel(...
+                        currRadDepths, ...
+                        currRadialDist_sq(currIx), ...
+                        sigmaIni_sq, ...
+                        machine.data(energyIx), ...
+                        currCstds);                 
+
+                    % dij sampling is exluded for particles until we investigated the influence of voxel sampling for particles
+                    %relDoseThreshold   =  0.02;   % sample dose values beyond the relative dose
+                    %Type               = 'dose';
+                    %[currIx,bixelDose] = matRad_DijSampling(currIx,bixelDose,radDepths(currIx),radialDist_sq(currIx),Type,relDoseThreshold);
+
+                    % Save dose for every bixel in cell array
+                    doseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} = sparse(VdoseGrid(ix(currIx)),1,bixelDose,dij.doseGrid.numOfVoxels,1);
                 else
                     % calculate particle dose for bixel k on ray j of beam i
                     bixelDose = matRad_calcParticleDoseBixel(...
