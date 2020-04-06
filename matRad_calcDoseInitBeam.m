@@ -55,12 +55,7 @@ if strcmp(anaMode, 'stdCorr')
         notNaN = find(~isnan(slice));
         slice(isnan(slice)) = 0;
         distSlice = sum(slice(notNaN))/ numel(slice(notNaN));
-        
-        stdSlice  = std(slice, 0, 'all');
-        counting = (stdSlice/distSlice)^-1;
-%         std1(ii) = std(slice,0,'all')^2 + 1;
-%         dist11(ii) = sum(1./(std1)) / 2 * pi;
-        
+                
         nPadd = floor(kernelSize/2);
         paddedSlice = zeros(size(slice,1) + 2 * nPadd, size(slice,2) + 2 * nPadd);
         paddedSlice(nPadd + 1:ct.cubeDim(2) + nPadd, nPadd + 1:ct.cubeDim(3) + nPadd) = slice;
@@ -78,8 +73,7 @@ if strcmp(anaMode, 'stdCorr')
         if isnan(dist)
             sigma = 0;
         else
-            sigma = 1 * (distSlice/150);
-%             sigma = sqrt(counting);
+            sigma = 2 * (distSlice/150);
         end
         kernel = matRad_create2dimGaussKernel(kernelSize, sigma, res);
 
@@ -91,7 +85,7 @@ if strcmp(anaMode, 'stdCorr')
         meanRadDepths(ii,:,:) = tmpRadDepth((kernelSize+1)/2:size(tmpRadDepth,1)-(kernelSize-1)/2,(kernelSize+1)/2:size(tmpRadDepth,2)-(kernelSize-1)/2);    
     end
     meanRadDepths = reshape(meanRadDepths, prod(ct.cubeDim),1);
-    cStdCtGrid = sqrt(reshape(cStdCtGrid, prod(ct.cubeDim),1));
+    cStdCtGrid = reshape(cStdCtGrid, prod(ct.cubeDim),1);
 end
 
 fprintf('done.\n');

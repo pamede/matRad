@@ -5,8 +5,17 @@ matRad_rc
 % load lung01MC.mat
 load slab01MC.mat
 
+pln.machine = 'matRadBDL_APM';
+
+mcDose = mcDose * 1.1252;
 
 %% dose calculation
+% analytical dose
+    pln.propDoseCalc.anaMode = 'standard';
+    dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
+    resultGUI = matRad_calcCubes(resultGUI.w,dij);
+    anaDose   = resultGUI.physicalDose;
+        
 % analytical dose with fine sampling
     pln.propDoseCalc.anaMode = 'fineSampling';
     pln.propDoseCalc.fineSampling.method = 'russo';
@@ -18,7 +27,7 @@ load slab01MC.mat
     anaFsDose   = resultGUI.physicalDoseFS;
     
 % analytical dose with std correction
-    pln.machine = 'matRadBDL_APM';
+%     pln.machine = 'matRadBDL_APM';
     pln.propDoseCalc.anaMode = 'stdCorr';    
     dijSC = matRad_calcParticleDose(ct,stf,pln,cst,false);
     resultGUI_SC = matRad_calcCubes(resultGUI.w,dijSC);
