@@ -3,53 +3,29 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 load lung01MC.mat 
-num = 1;
-stf = stf(1);
-stf.ray = stf.ray(num);
-stf.numOfRays = 1;
-stf.numOfBixelsPerRay = stf.numOfBixelsPerRay(num);
-stf.totalNumOfBixels = stf.numOfBixelsPerRay(num);
-pln.propStf.numOfBeams = pln.propStf.numOfBeams(1); 
-pln.propStf.couchAngles = pln.propStf.couchAngles(1); 
-pln.propStf.gantryAngles = pln.propStf.gantryAngles(1);
-
 % load slab01MC.mat
- 
-%% dose calculation    
-% analytical dose without fine sampling
-    pln.propDoseCalc.anaMode = 'standard';
-    dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI = matRad_calcCubes(1,dij);
-    anaDose     = resultGUI.physicalDose;
 
-%  % analytical dose with fine sampling
-    pln.propDoseCalc.anaMode = 'fineSampling';    
+%% dose calculation        
+%analytical dose with fine sampling
+    tic
+    pln.propDoseCalc.anaMode = 'fineSampling';
     pln.propDoseCalc.fineSampling.method = 'russo';
     pln.propDoseCalc.fineSampling.N = 11;
     pln.propDoseCalc.fineSampling.sigmaSub = 2;
     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_FS = matRad_calcCubes(1,dijFS);
-    anaFsDose   = resultGUI_FS.physicalDose;
-    
-    % analytical dose with std correction
+    resultGUI_FS = matRad_calcCubes(resultGUI.w,dijFS);
+    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
+    anaFsDose   = resultGUI.physicalDoseFS;
+    t1 = toc;
+
+% analytical dose with std correction
+    tic;
     pln.propDoseCalc.anaMode = 'stdCorr';    
     dijSC = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_SC = matRad_calcCubes(1,dijSC);
-    anaScDose   = resultGUI_SC.physicalDose;
-
- % Monte Carlo dose
-    pln.propDoseCalc.anaMode = 'standard';
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,1, 1000000);
-    resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
-    mcDose      = resultGUI.physicalDoseMC;
-
-    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-
+    resultGUI_SC = matRad_calcCubes(resultGUI.w,dijSC);
+    resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
+    anaScDose   = resultGUI.physicalDoseSC;
+    t2 = toc;
     
 %% execute gamma tests
 gammaTest = [2, 2];

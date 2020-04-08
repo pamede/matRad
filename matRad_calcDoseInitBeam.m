@@ -9,6 +9,13 @@ end
 
 bixelsPerBeam = 0;
 
+
+if strcmp(anaMode, 'stdCorr')
+    newIx = (1:prod(ct.cubeDim))';
+    [yCoordsV_vox, xCoordsV_vox, zCoordsV_vox] = ind2sub(ct.cubeDim,newIx);
+end
+
+
 % convert voxel indices to real coordinates using iso center of beam i
 xCoordsV       = xCoordsV_vox(:)*ct.resolution.x-stf(i).isoCenter(1);
 yCoordsV       = yCoordsV_vox(:)*ct.resolution.y-stf(i).isoCenter(2);
@@ -43,38 +50,72 @@ geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
 
 % Calculate radiological depth cube
 fprintf('matRad: calculate radiological depth cube...');
-[radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
 
 if strcmp(anaMode, 'stdCorr')
-    kernelSize = min(ct.cubeDim(2), ct.cubeDim(3)) + (mod(min(ct.cubeDim(2), ct.cubeDim(3)),2) -  1);
+    
+    [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,newIx,rot_coordsV,300);
+    
+    B = imrotate3(radDepthsMat{1},stf(i).gantryAngle,[0,0,1],'cubic');
+    
+    rotRadDepths = B;
+    rotRadDepths(rotRadDepths == 0) = NaN;
+
+    cStdCtGrid   = zeros(size(rotRadDepths));
+    meanRadDepths = zeros(size(rotRadDepths)); 
+
+
+    sizeRot = size(rotRadDepths);
+    save = [];
+
+    kernelSize = min(sizeRot(2), sizeRot(3)) + (mod(min(sizeRot(2), sizeRot(3)),2) -  1);
     res = [ct.resolution.y, ct.resolution.z];
     dist = 0;
-    cube = reshape(radDepthVctGrid{1}, ct.cubeDim);
-    for ii = 1:ct.cubeDim(1)
-        slice = reshape(cube(ii,:,:),ct.cubeDim(2),ct.cubeDim(3));
+    cube = rotRadDepths;
+    
+    for ii = 1:sizeRot(1)
+        if ii == 1
+            lastC = 0;
+            secondToLastC = 0;
+            tmpCstd = 0;
+        elseif ii > 1
+            secondToLastC = 0;
+            lastC = sum(cStdCtGrid(ii-1,:,:),'all')/numel(cStdCtGrid(ii-1,:,:));
+        elseif ii > 2
+            secondToLastC = sum(cStdCtGrid(ii-2,:,:),'all')/numel(cStdCtGrid(ii-1,:,:));
+            lastC = sum(cStdCtGrid(ii-1,:,:),'all')/numel(cStdCtGrid(ii-1,:,:));
+        end
+   
+        slice = reshape(cube(ii,:,:),sizeRot(2),sizeRot(3));
+        
         notNaN = find(~isnan(slice));
         slice(isnan(slice)) = 0;
         distSlice = sum(slice(notNaN))/ numel(slice(notNaN));
                 
         nPadd = floor(kernelSize/2);
         paddedSlice = zeros(size(slice,1) + 2 * nPadd, size(slice,2) + 2 * nPadd);
-        paddedSlice(nPadd + 1:ct.cubeDim(2) + nPadd, nPadd + 1:ct.cubeDim(3) + nPadd) = slice;
+        paddedSlice(nPadd + 1:sizeRot(2) + nPadd, nPadd + 1:sizeRot(3) + nPadd) = slice;
         
         paddedSlice(1:nPadd, 1:nPadd) = slice(1,1);
-        paddedSlice(ct.cubeDim(2) + nPadd + 1:end, 1:nPadd) = slice(end,1);
-        paddedSlice(1:nPadd, ct.cubeDim(3) + nPadd + 1:end) = slice(1,end);
-        paddedSlice(ct.cubeDim(2) + nPadd + 1:end, ct.cubeDim(3) + nPadd + 1:end) = slice(end);
+        paddedSlice(sizeRot(2) + nPadd + 1:end, 1:nPadd) = slice(end,1);
+        paddedSlice(1:nPadd, sizeRot(3) + nPadd + 1:end) = slice(1,end);
+        paddedSlice(sizeRot(2) + nPadd + 1:end, sizeRot(3) + nPadd + 1:end) = slice(end);
         
-        paddedSlice(1:nPadd,nPadd + 1:ct.cubeDim(3) + nPadd) = repmat(slice(1,:),nPadd,1);
-        paddedSlice(ct.cubeDim(2) + nPadd + 1:end,nPadd + 1:ct.cubeDim(3) + nPadd) = repmat(slice(end,:),nPadd,1);
-        paddedSlice(nPadd + 1:ct.cubeDim(2) + nPadd,1:nPadd) = repmat(slice(:,1),1,nPadd);
-        paddedSlice(nPadd + 1:ct.cubeDim(2) + nPadd ,ct.cubeDim(3) + nPadd + 1:end) = repmat(slice(:,end),1,nPadd);
+        paddedSlice(1:nPadd,nPadd + 1:sizeRot(3) + nPadd) = repmat(slice(1,:),nPadd,1);
+        paddedSlice(sizeRot(2) + nPadd + 1:end,nPadd + 1:sizeRot(3) + nPadd) = repmat(slice(end,:),nPadd,1);
+        paddedSlice(nPadd + 1:sizeRot(2) + nPadd,1:nPadd) = repmat(slice(:,1),1,nPadd);
+        paddedSlice(nPadd + 1:sizeRot(2) + nPadd ,sizeRot(3) + nPadd + 1:end) = repmat(slice(:,end),1,nPadd);
 
         if isnan(dist)
             sigma = 0;
         else
-            sigma = 2 * (distSlice/150);
+            sigma = 1.2 * (1 + 0.5 * (lastC - secondToLastC));
+%             sigma = 2 * (distSlice/150);
+            
+%             sigma1 = 
         end
+        
+        save = [save, sigma];
+        
         kernel = matRad_create2dimGaussKernel(kernelSize, sigma, res);
 
         tmpCstd     = (convn(paddedSlice.^2, kernel, 'same') - convn(paddedSlice, kernel, 'same').^2);
@@ -84,8 +125,28 @@ if strcmp(anaMode, 'stdCorr')
         cStdCtGrid(ii,:,:)   = tmpCstd((kernelSize+1)/2:size(tmpCstd,1)-(kernelSize-1)/2,(kernelSize+1)/2:size(tmpCstd,2)-(kernelSize-1)/2);
         meanRadDepths(ii,:,:) = tmpRadDepth((kernelSize+1)/2:size(tmpRadDepth,1)-(kernelSize-1)/2,(kernelSize+1)/2:size(tmpRadDepth,2)-(kernelSize-1)/2);    
     end
+    
+    B = imrotate3(meanRadDepths,-stf(i).gantryAngle,[0,0,1]);
+    s = (size(B) - ct.cubeDim)/2;
+    meanRadDepths = B(1+s(1):size(B,1)-s(1),1+s(2):size(B,2)-s(2),1+s(3):size(B,3)-s(3));
+    
+    B = imrotate3(cStdCtGrid,-stf(i).gantryAngle,[0,0,1]);
+    s = (size(B) - ct.cubeDim)/2;
+    cStdCtGrid = B(1+s(1):size(B,1)-s(1),1+s(2):size(B,2)-s(2),1+s(3):size(B,3)-s(3));
+    
+    imagesc(meanRadDepths(:,:,25));
+    figure
+    imagesc(cStdCtGrid(:,:,25));
+    figure
+    plot(save)
+    
     meanRadDepths = reshape(meanRadDepths, prod(ct.cubeDim),1);
     cStdCtGrid = reshape(cStdCtGrid, prod(ct.cubeDim),1);
+    meanRadDepths = meanRadDepths(VctGrid);
+    cStdCtGrid = cStdCtGrid(VctGrid);
+    radDepthVctGrid{1} = radDepthVctGrid{1}(VctGrid);
+else
+    [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
 end
 
 fprintf('done.\n');
