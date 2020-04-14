@@ -9,3 +9,4 @@ scenarios/prostate01.mat
 scenarios/slab01.mat
 scenarios/slab01MC.mat
 *.asv
+scenarios/resultLung01.mat

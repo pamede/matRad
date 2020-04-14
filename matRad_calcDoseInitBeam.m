@@ -9,12 +9,10 @@ end
 
 bixelsPerBeam = 0;
 
-
 if strcmp(anaMode, 'stdCorr')
     newIx = (1:prod(ct.cubeDim))';
     [yCoordsV_vox, xCoordsV_vox, zCoordsV_vox] = ind2sub(ct.cubeDim,newIx);
 end
-
 
 % convert voxel indices to real coordinates using iso center of beam i
 xCoordsV       = xCoordsV_vox(:)*ct.resolution.x-stf(i).isoCenter(1);
@@ -53,7 +51,7 @@ fprintf('matRad: calculate radiological depth cube...');
 
 if strcmp(anaMode, 'stdCorr')
     
-    [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,newIx,rot_coordsV,300);
+    [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,newIx,rot_coordsV,200);
     
     B = imrotate3(radDepthsMat{1},stf(i).gantryAngle,[0,0,1],'cubic');
     
@@ -109,9 +107,6 @@ if strcmp(anaMode, 'stdCorr')
             sigma = 0;
         else
             sigma = 1.2 * (1 + 0.5 * (lastC - secondToLastC));
-%             sigma = 2 * (distSlice/150);
-            
-%             sigma1 = 
         end
         
         save = [save, sigma];
@@ -134,16 +129,18 @@ if strcmp(anaMode, 'stdCorr')
     s = (size(B) - ct.cubeDim)/2;
     cStdCtGrid = B(1+s(1):size(B,1)-s(1),1+s(2):size(B,2)-s(2),1+s(3):size(B,3)-s(3));
     
-    imagesc(meanRadDepths(:,:,25));
-    figure
-    imagesc(cStdCtGrid(:,:,25));
-    figure
-    plot(save)
+%     imagesc(meanRadDepths(:,:,round(stf(1).isoCenter(3)/ct.resolution.z)));
+%     figure
+%     imagesc(cStdCtGrid(:,:,round(stf(1).isoCenter(3)/ct.resolution.z)));
+%     figure
+%     plot(save)
     
-    meanRadDepths = reshape(meanRadDepths, prod(ct.cubeDim),1);
-    cStdCtGrid = reshape(cStdCtGrid, prod(ct.cubeDim),1);
-    meanRadDepths = meanRadDepths(VctGrid);
-    cStdCtGrid = cStdCtGrid(VctGrid);
+%     meanRadDepths = reshape(meanRadDepths, prod(ct.cubeDim),1);
+%     cStdCtGrid = reshape(cStdCtGrid, prod(ct.cubeDim),1);
+%     meanRadDepths1 = meanRadDepths;
+%     cStdCtGrid1 = cStdCtGrid;
+    meanRadDepths = {meanRadDepths(VctGrid)};
+    cStdCtGrid = {cStdCtGrid(VctGrid)};
     radDepthVctGrid{1} = radDepthVctGrid{1}(VctGrid);
 else
     [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
@@ -151,9 +148,25 @@ end
 
 fprintf('done.\n');
 
+% figure
+% imagesc(radDepthsMat{1}(:,:,85));
+
 % interpolate radiological depth cube to dose grid resolution
 radDepthVdoseGrid = matRad_interpRadDepth...
     (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,radDepthVctGrid);
+
+if strcmp(anaMode, 'stdCorr')
+    meanRadDepthVdoseGrid = matRad_interpRadDepth...
+        (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,meanRadDepths);
+    cStdCtGridVdoseGrid = matRad_interpRadDepth...
+        (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,cStdCtGrid);
+end
+
+% figure
+% tmp = zeros(prod(dij.doseGrid.dimensions),1);
+% tmp(VdoseGrid) = radDepthVdoseGrid{1};
+% pp = reshape(tmp,103,103,113);
+% imagesc(pp(:,:,56));
 
 if strcmp(anaMode, 'fineSampling')
     % interpolate radiological depth cube used for fine sampling to dose grid resolution

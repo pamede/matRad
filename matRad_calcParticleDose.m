@@ -183,6 +183,13 @@ for i = 1:length(stf) % loop over all beams
                 end
             elseif strcmp(anaMode, 'stdCorr')
                 % Ray tracing for beam i and ray j
+%                 [ix,currRadialDist_sq,~,~,~,~] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
+%                                                      stf(i).sourcePoint_bev, ...
+%                                                      stf(i).ray(j).targetPoint_bev, ...
+%                                                      machine.meta.SAD, ...
+%                                                      find(~isnan(radDepthVdoseGrid{1})), ...
+%                                                      maxLateralCutoffDoseCalc);
+
                 [ix,currRadialDist_sq,~,~,~,~] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
                                                      stf(i).sourcePoint_bev, ...
                                                      stf(i).ray(j).targetPoint_bev, ...
@@ -190,8 +197,10 @@ for i = 1:length(stf) % loop over all beams
                                                      find(~isnan(radDepthVdoseGrid{1})), ...
                                                      maxLateralCutoffDoseCalc);
                                                                                   
-                radDepths = meanRadDepths(ix); 
-                cStds     = cStdCtGrid(ix);
+                radDepths = meanRadDepthVdoseGrid{1}(ix); 
+                cStds  = cStdCtGridVdoseGrid{1}(ix);  
+                    
+                
             else
                 % Ray tracing for beam i and ray j
                 [ix,currRadialDist_sq,~,~,~,~] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
@@ -201,7 +210,11 @@ for i = 1:length(stf) % loop over all beams
                                                      find(~isnan(radDepthVdoseGrid{1})), ...
                                                      maxLateralCutoffDoseCalc);
                                                                                   
-                radDepths = radDepthVdoseGrid{1}(ix);     
+                radDepths = radDepthVdoseGrid{1}(ix);  
+                
+%                 tmp = zeros(VctGrid,1);
+%                 tmp(ix)
+                
             end
             
                    
@@ -250,8 +263,13 @@ for i = 1:length(stf) % loop over all beams
                     % interpolate radiological depths at projected
                     % coordinates
                     radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
-                        projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest');                       
-                        
+                        projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest',0.5);                       
+                       
+%                     tmp = zeros(prod(ct.cubeDim),1);
+%                     tmp(ix) = radDepths(:,:,1);
+%                     er = reshape(tmp, ct.cubeDim)
+%                     imagesc(er(:,:,round(stf(1).isoCenter(3)/ct.resolution.z)))
+
                     % compute radial distances relative to pencil beam
                     % component
                     currRadialDist_sq = reshape(bsxfun(@plus,latDistsX,posX(:,k)'),[],1,numOfSub(k)).^2 + reshape(bsxfun(@plus,latDistsZ,posZ(:,k)'),[],1,numOfSub(k)).^2;
