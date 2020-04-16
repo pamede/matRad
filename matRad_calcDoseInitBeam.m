@@ -51,7 +51,7 @@ fprintf('matRad: calculate radiological depth cube...');
 
 if strcmp(anaMode, 'stdCorr')
     
-    [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,newIx,rot_coordsV,200);
+    [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,newIx,rot_coordsV,300);
     
     B = imrotate3(radDepthsMat{1},stf(i).gantryAngle,[0,0,1],'cubic');
     

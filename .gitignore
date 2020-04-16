@@ -10,3 +10,14 @@ scenarios/slab01.mat
 scenarios/slab01MC.mat
 *.asv
 scenarios/resultLung01.mat
+scenarios/alderson01RESULT.mat
+scenarios/liver01MC.mat
+scenarios/liver01RESULT.mat
+scenarios/lung01RESULT.mat
+scenarios/lung02MC.mat
+scenarios/prostate01MC.mat
+scenarios/prostate01RESULT.mat
+scenarios/slab01RESULT.mat
+ergNTgamma1.mat
+ergNTgamma2.mat
+ergNTgamma3.mat

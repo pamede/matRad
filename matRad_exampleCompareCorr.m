@@ -2,60 +2,77 @@
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
+% load alderson01MC.mat
+% load liver01MC.mat
 % load lung01MC.mat 
-load alderson01MC.mat
-% load lung02.mat
-num = 159;
-stf = stf(1);
-stf.ray = stf.ray(num);
-stf.numOfRays = 1;
-stf.numOfBixelsPerRay = stf.numOfBixelsPerRay(num);
-stf.totalNumOfBixels = sum([stf.numOfBixelsPerRay(:)]);
-pln.propStf.numOfBeams = pln.propStf.numOfBeams(1); 
-pln.propStf.couchAngles = pln.propStf.couchAngles(1); 
-pln.propStf.gantryAngles = pln.propStf.gantryAngles(1);
+load lung02MC.mat
+% load prostate01MC.mat
 
-% load slab01MC.mat
- 
+clear anaDose mcDose resultGUI
+
+num = 10;
+beamNum = 1;
+stf = stf(beamNum);
+nRay = [];
+for i = 1:num
+    nRay = [nRay, round(rand * size(stf.ray, 2))];
+end
+nRay = sort(nRay);
+stf.numOfRays = num;
+stf.ray = stf.ray(nRay);
+
+for i = 1:num
+    ix = floor(rand * size(stf.ray(i).energy,2)) + 1;
+    stf.ray(i).energy = stf.ray(i).energy(ix);
+    stf.ray(i).focusIx = stf.ray(i).focusIx(ix);
+    stf.ray(i).rangeShifter = stf.ray(i).rangeShifter(ix);
+end
+
+stf.numOfBixelsPerRay = ones(1,num);
+stf.totalNumOfBixels = num;
+
+pln.propStf.couchAngles = pln.propStf.couchAngles(beamNum);
+pln.propStf.gantryAngles =  pln.propStf.gantryAngles(beamNum);
+w = ones(num,1);
+
 %% dose calculation    
 % analytical dose without fine sampling
     pln.propDoseCalc.anaMode = 'standard';
     dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI = matRad_calcCubes(1,dij);
+    resultGUI = matRad_calcCubes(w,dij);
     anaDose     = resultGUI.physicalDose;
 
 %  % analytical dose with fine sampling
     pln.propDoseCalc.anaMode = 'fineSampling';    
     pln.propDoseCalc.fineSampling.method = 'russo';
-    pln.propDoseCalc.fineSampling.N = 11;
+    pln.propDoseCalc.fineSampling.N = 21;
     pln.propDoseCalc.fineSampling.sigmaSub = 2;
     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_FS = matRad_calcCubes(1,dijFS);
+    resultGUI_FS = matRad_calcCubes(w,dijFS);
+    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
     anaFsDose   = resultGUI_FS.physicalDose;
     
     % analytical dose with std correction
     pln.propDoseCalc.anaMode = 'stdCorr';    
     dijSC = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_SC = matRad_calcCubes(1,dijSC);
+    resultGUI_SC = matRad_calcCubes(w,dijSC);
+    resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
     anaScDose   = resultGUI_SC.physicalDose;
 
  % Monte Carlo dose
     pln.propDoseCalc.anaMode = 'standard';
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,1, 1000000);
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,w,1000000);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
     mcDose      = resultGUI.physicalDoseMC;
 
-    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-
-    
+       
 %% execute gamma tests
-gammaTest = [2, 2];
-interpolation = 2;
+ana = sum(abs(anaDose - mcDose), 'all') / max(mcDose(:));
+anaFs = sum(abs(anaFsDose - mcDose), 'all') / max(mcDose(:));
+anaSc = sum(abs(anaScDose - mcDose), 'all') / max(mcDose(:));
+
+gammaTest = [3,3];
+interpolation = 1;
 
 figure
 [gammaCube1,gammaPassRateCell] = matRad_gammaIndex(anaDose,mcDose,[ct.resolution.x,ct.resolution.y,ct.resolution.z],gammaTest,round(stf(1).isoCenter(3)/ct.resolution.z) ,interpolation,'global',cst);
