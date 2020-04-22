@@ -9,7 +9,7 @@ end
 
 bixelsPerBeam = 0;
 
-if strcmp(anaMode, 'stdCorr')
+if strcmp(anaMode, 'stdCorr') || strcmp(anaMode, 'both')
     newIx = (1:prod(ct.cubeDim))';
     [yCoordsV_vox, xCoordsV_vox, zCoordsV_vox] = ind2sub(ct.cubeDim,newIx);
 end
@@ -49,7 +49,7 @@ geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
 % Calculate radiological depth cube
 fprintf('matRad: calculate radiological depth cube...');
 
-if strcmp(anaMode, 'stdCorr')
+if strcmp(anaMode, 'stdCorr') || strcmp(anaMode, 'both')
     
     [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,newIx,rot_coordsV,300);
     
@@ -139,9 +139,22 @@ if strcmp(anaMode, 'stdCorr')
 %     cStdCtGrid = reshape(cStdCtGrid, prod(ct.cubeDim),1);
 %     meanRadDepths1 = meanRadDepths;
 %     cStdCtGrid1 = cStdCtGrid;
-    meanRadDepths = {meanRadDepths(VctGrid)};
-    cStdCtGrid = {cStdCtGrid(VctGrid)};
-    radDepthVctGrid{1} = radDepthVctGrid{1}(VctGrid);
+%     if strcmp(anaMode, 'both')
+%         meanRadDepthsMat{1} = meanRadDepths;
+%         cStdCtGridMat{1} = cStdCtGrid;
+%         radDepthVctGrid{1} = radDepthVctGrid{1}(VctGrid);
+%     else
+
+        meanRadDepthsMat{1} = matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z, meanRadDepths, ...
+                                    dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest');
+                                
+        cStdCtGridMat{1} = matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z, cStdCtGrid, ...
+                                    dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest');
+                                
+        meanRadDepths = {meanRadDepths(VctGrid)};
+        cStdCtGrid = {cStdCtGrid(VctGrid)};
+        radDepthVctGrid{1} = radDepthVctGrid{1}(VctGrid);
+    
 else
     [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
 end
@@ -155,7 +168,7 @@ fprintf('done.\n');
 radDepthVdoseGrid = matRad_interpRadDepth...
     (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,radDepthVctGrid);
 
-if strcmp(anaMode, 'stdCorr')
+if strcmp(anaMode, 'stdCorr') || strcmp(anaMode, 'both')
     meanRadDepthVdoseGrid = matRad_interpRadDepth...
         (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,meanRadDepths);
     cStdCtGridVdoseGrid = matRad_interpRadDepth...

@@ -134,7 +134,8 @@ if enable(1) == 1
     % Calculate absolute difference cube and dose windows for plots
     differenceCube  = cube1-cube2;
     doseDiffWindow  = [-max(differenceCube(:)) max(differenceCube(:))];
-    doseGammaWindow = [0 max(gammaCube(:))];
+%     doseGammaWindow = [0 max(gammaCube(:))];
+    doseGammaWindow = [0 2];
     
     
     % Plot everything

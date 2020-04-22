@@ -4,13 +4,13 @@ matRad_rc
 % load patient data, i.e. ct, voi, cst
 % load alderson01MC.mat
 % load liver01MC.mat
-% load lung01MC.mat 
-load lung02MC.mat
+load lung01MC.mat 
+% load lung02MC.mat
 % load prostate01MC.mat
 
 clear anaDose mcDose resultGUI
 
-num = 10;
+num = 5;
 beamNum = 1;
 stf = stf(beamNum);
 nRay = [];
@@ -35,6 +35,7 @@ pln.propStf.couchAngles = pln.propStf.couchAngles(beamNum);
 pln.propStf.gantryAngles =  pln.propStf.gantryAngles(beamNum);
 w = ones(num,1);
 
+
 %% dose calculation    
 % analytical dose without fine sampling
     pln.propDoseCalc.anaMode = 'standard';
@@ -58,6 +59,16 @@ w = ones(num,1);
     resultGUI_SC = matRad_calcCubes(w,dijSC);
     resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
     anaScDose   = resultGUI_SC.physicalDose;
+    
+    % analytical dose with std correction
+    pln.propDoseCalc.anaMode = 'both';    
+    pln.propDoseCalc.fineSampling.method = 'russo';
+    pln.propDoseCalc.fineSampling.N = 21;
+    pln.propDoseCalc.fineSampling.sigmaSub = 2;
+    dijBO = matRad_calcParticleDose(ct,stf,pln,cst,false);
+    resultGUI_BO = matRad_calcCubes(w,dijBO);
+    resultGUI.physicalDoseBO = resultGUI_BO.physicalDose;
+    anaBoDose   = resultGUI_BO.physicalDose;
 
  % Monte Carlo dose
     pln.propDoseCalc.anaMode = 'standard';
@@ -70,13 +81,20 @@ w = ones(num,1);
 ana = sum(abs(anaDose - mcDose), 'all') / max(mcDose(:));
 anaFs = sum(abs(anaFsDose - mcDose), 'all') / max(mcDose(:));
 anaSc = sum(abs(anaScDose - mcDose), 'all') / max(mcDose(:));
+anaBo = sum(abs(anaBoDose - mcDose), 'all') / max(mcDose(:));
 
-gammaTest = [3,3];
+gammaTest = [2,2];
 interpolation = 1;
 
 figure
 [gammaCube1,gammaPassRateCell] = matRad_gammaIndex(anaDose,mcDose,[ct.resolution.x,ct.resolution.y,ct.resolution.z],gammaTest,round(stf(1).isoCenter(3)/ct.resolution.z) ,interpolation,'global',cst);
 title({[num2str(gammaPassRateCell{1,2}) '% of points > ' num2str(gammaTest(1)) '% pass gamma criterion (' num2str(gammaTest(1)) '%/ ' num2str(gammaTest(2)) 'mm)'];'stadard dose'});
+
+
+figure
+[gammaCube1,gammaPassRateCell] = matRad_gammaIndex(anaBoDose,mcDose,[ct.resolution.x,ct.resolution.y,ct.resolution.z],gammaTest,round(stf(1).isoCenter(3)/ct.resolution.z) ,interpolation,'global',cst);
+title({[num2str(gammaPassRateCell{1,2}) '% of points > ' num2str(gammaTest(1)) '% pass gamma criterion (' num2str(gammaTest(1)) '%/ ' num2str(gammaTest(2)) 'mm)'];'std corr fine sampling dose'});
+
 
 figure
 [gammaCube2,gammaPassRateCell] = matRad_gammaIndex(anaScDose,mcDose,[ct.resolution.x,ct.resolution.y,ct.resolution.z],gammaTest,round(stf(1).isoCenter(3)/ct.resolution.z),interpolation,'global',cst);

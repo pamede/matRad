@@ -157,7 +157,7 @@ for i = 1:length(stf) % loop over all beams
 
             maxLateralCutoffDoseCalc = max(machine.data(energyIx).LatCutOff.CutOff);
 
-            if strcmp(anaMode, 'fineSampling')
+            if strcmp(anaMode, 'fineSampling') || strcmp(anaMode, 'both')
                 % Ray tracing for beam i and ray j
                 [ix,~,~,~,latDistsX,latDistsZ] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
                                                      stf(i).sourcePoint_bev, ...
@@ -181,6 +181,7 @@ for i = 1:length(stf) % loop over all beams
                         error('Problem with chosen sub beam sigma in fine sampling calculation');
                     end
                 end
+                
             elseif strcmp(anaMode, 'stdCorr')
                 % Ray tracing for beam i and ray j
 %                 [ix,currRadialDist_sq,~,~,~,~] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
@@ -250,6 +251,32 @@ for i = 1:length(stf) % loop over all beams
                 % find energy index in base data
                 energyIx = find(round2(stf(i).ray(j).energy(k),4) == round2([machine.data.energy],4));
                 
+                if strcmp(anaMode, 'both')
+                    
+                    % calculate projected coordinates for fine sampling of
+                    % each beamlet
+                    projCoords = matRad_projectOnComponents(VdoseGrid(ix), size(meanRadDepthsMat{1}), stf(i).sourcePoint_bev,...
+                                    stf(i).ray(j).targetPoint_bev, stf(i).isoCenter,...
+                                    [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
+                                    -posX(:,k), -posZ(:,k), rotMat_system_T);
+
+                    % interpolate radiological depths at projected
+                    % coordinates
+                    radDepths = interp3(meanRadDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
+                        projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest',0.5);   
+                    
+                    cStds = interp3(cStdCtGridMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
+                        projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest',0.5);     
+                       
+%                     tmp = zeros(prod(ct.cubeDim),1);
+%                     tmp(ix) = radDepths(:,:,1);
+%                     er = reshape(tmp, ct.cubeDim)
+%                     imagesc(er(:,:,round(stf(1).isoCenter(3)/ct.resolution.z)))
+
+                    % compute radial distances relative to pencil beam
+                    % component
+                    currRadialDist_sq = reshape(bsxfun(@plus,latDistsX,posX(:,k)'),[],1,numOfSub(k)).^2 + reshape(bsxfun(@plus,latDistsZ,posZ(:,k)'),[],1,numOfSub(k)).^2;
+                end
                 
                 if strcmp(anaMode, 'fineSampling')
                     
@@ -340,6 +367,25 @@ for i = 1:length(stf) % loop over all beams
                                 currRadialDist_sq(currIx(:,:,c),:,c), ...
                                 sigmaSub(k)^2, ...
                                 machine.data(energyIx));
+                                                        
+                        tmpDose(currIx(:,:,c)) = bixelDose;
+                        totalDose = totalDose + tmpDose;
+                    end
+                    
+                    doseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} = sparse(VdoseGrid(ix),1,totalDose,dij.doseGrid.numOfVoxels,1);
+                elseif strcmp(anaMode, 'both')
+                    % initialise empty dose array
+                    totalDose = zeros(size(currIx,1),1);
+                    
+                    % run over components
+                    for c = 1:numOfSub
+                        tmpDose = zeros(size(currIx,1),1);
+                        bixelDose = finalWeight(c,k).*matRad_calcParticleDoseBixel(...
+                                radDepths(currIx(:,:,c),1,c), ...
+                                currRadialDist_sq(currIx(:,:,c),:,c), ...
+                                sigmaSub(k)^2, ...
+                                machine.data(energyIx), ...
+                                cStds(currIx(:,:,c),1,c));
                                                         
                         tmpDose(currIx(:,:,c)) = bixelDose;
                         totalDose = totalDose + tmpDose;

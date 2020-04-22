@@ -5,8 +5,7 @@ end
 
 % assing analytical mode
 % if isfield(pln.propDoseCalc,'fineSampling') && strcmp(pln.radiationMode, 'protons')
-if strcmp(pln.propDoseCalc.anaMode, 'fineSampling')
-    anaMode = 'fineSampling';
+if strcmp(pln.propDoseCalc.anaMode, 'fineSampling') || strcmp(pln.propDoseCalc.anaMode, 'both')
     if isfield(pln.propDoseCalc.fineSampling,'N')
         fineSamplingN = pln.propDoseCalc.fineSampling.N;
     else
@@ -22,9 +21,16 @@ if strcmp(pln.propDoseCalc.anaMode, 'fineSampling')
     else
         fineSamplingMethod = 'russo';
     end
+    if strcmp(pln.propDoseCalc.anaMode, 'fineSampling')
+    	anaMode = 'fineSampling';
+    else
+        anaMode = 'both';
+    end
 % elseif isfield(pln.propDoseCalc,'stdCorr') && strcmp(pln.radiationMode, 'protons')
 elseif strcmp(pln.propDoseCalc.anaMode, 'stdCorr')
     anaMode = 'stdCorr';
+elseif strcmp(pln.propDoseCalc.anaMode, 'both')
+    anaMode = 'both';
 else
     anaMode = 'standard';
 end
