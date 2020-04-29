@@ -24,3 +24,4 @@ scenarios/slab01MC.mat
 scenarios/slab01RESULT.mat
 matRad_calcParticleDoseMC.asv
 matRad_exampleTest.asv
+matRad_calcParticleDose.asv

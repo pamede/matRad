@@ -19,8 +19,8 @@ matRad_rc
 % load patient data, i.e. ct, voi, cst
 % load LIVER
 % load TG119
-load BOXPHANTOM.mat
-% load PHANTOM_control.mat
+% load BOXPHANTOM.mat
+load PHANTOM_control.mat
 % load ALDERSON.mat
 
 % meta information for treatment plan
@@ -32,7 +32,7 @@ pln.numOfFractions  = 30;
 % beam geometry settings
 pln.propStf.bixelWidth      = 200; % [mm] / also corresponds to lateral spot spacing for particles
 pln.propStf.longitudinalSpotSpacing = 200;
-pln.propStf.gantryAngles    = 45; % [?] 
+pln.propStf.gantryAngles    = 0; % [?] 
 pln.propStf.couchAngles     = 0; % [?]
 pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter       = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
@@ -69,6 +69,6 @@ stf.ray.energy = machine.data(40).energy;
 
  %% plot doses
 
- matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
 
     
