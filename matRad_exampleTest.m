@@ -63,13 +63,13 @@ stf.ray.energy = machine.data(25).energy;
     resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
     anaDose     = resultGUI.physicalDose;
     
-%  % analytical dose with fine sampling
-%     pln.propDoseCalc.anaMode = 'fineSampling';
-%     pln.propDoseCalc.fineSampling.N = 11;
-%     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-%     resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
-%     resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
-%     anaDoseFS     = resultGUI.physicalDoseFS;
+ % analytical dose with fine sampling
+    pln.propDoseCalc.anaMode = 'fineSampling';
+    pln.propDoseCalc.fineSampling.N = 21;
+    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
+    resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
+    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
+    anaFsDose     = resultGUI.physicalDoseFS;
 
  % Monte Carlo dose
     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
@@ -78,6 +78,7 @@ stf.ray.energy = machine.data(25).energy;
 
  %% plot doses
 
-matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+% matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
 
     
