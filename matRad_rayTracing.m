@@ -1,4 +1,4 @@
-function radDepthV = matRad_rayTracing(stf,ct,V,rot_coordsV,lateralCutoff)
+function [radDepthV, radDepthsMat] = matRad_rayTracing(stf,ct,V,rot_coordsV,lateralCutoff)
 % matRad visualization of two-dimensional dose distributions on ct including
 % segmentation
 % 
@@ -14,7 +14,8 @@ function radDepthV = matRad_rayTracing(stf,ct,V,rot_coordsV,lateralCutoff)
 
 %
 % output
-%   radDepthV:  radiological depth inside the patient
+%   radDepthV:      radiological depth inside the patient
+%   radDepthsMat:   radiological depth in whole ct
 %
 % References
 %   [1] http://www.sciencedirect.com/science/article/pii/S1120179711001359
@@ -103,8 +104,9 @@ for i = 1:size(rayMx_world,1)
     x_dist = coords(ixHitVoxel,1).*scale_factor - rayMx_bev(i,1);
     z_dist = coords(ixHitVoxel,3).*scale_factor - rayMx_bev(i,3);
 
-    ixRememberFromCurrTracing = x_dist > -raySelection & x_dist <= raySelection ...
-                              & z_dist > -raySelection & z_dist <= raySelection;
+    ixRememberFromCurrTracing = (x_dist > -raySelection & x_dist <= raySelection ...
+                                & z_dist > -raySelection & z_dist <= raySelection) ...
+                                | isinf(scale_factor);
 
     if any(ixRememberFromCurrTracing) > 0
 
@@ -128,5 +130,6 @@ end
 % only take voxel inside the patient
 for i = 1:ct.numOfCtScen
     radDepthV{i} = radDepthCube{i}(V);
+    radDepthsMat{i} = radDepthCube{1};
 end
 

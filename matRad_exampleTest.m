@@ -20,7 +20,8 @@ matRad_rc
 % load LIVER
 % load TG119
 % load BOXPHANTOM.mat
-load PHANTOM_control.mat
+% load PHANTOM_control.mat
+load PHANTOM_slab_entrance_10mm.mat
 % load ALDERSON.mat
 
 % meta information for treatment plan
@@ -40,7 +41,7 @@ pln.propStf.isoCenter       = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCent
 % dose calculation settings
 pln.propDoseCalc.doseGrid.resolution.x = 1; % [mm]
 pln.propDoseCalc.doseGrid.resolution.y = 1; % [mm]
-pln.propDoseCalc.doseGrid.resolution.z = 1  ; % [mm]
+pln.propDoseCalc.doseGrid.resolution.z = 1; % [mm]
 
 % optimization settings
 pln.propOpt.optimizer       = 'IPOPT';
@@ -52,7 +53,7 @@ pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't /
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
 load protons_generic_MCsquare
-stf.ray.energy = machine.data(40).energy;
+stf.ray.energy = machine.data(25).energy;
 
 
 %% dose calculation
@@ -61,6 +62,14 @@ stf.ray.energy = machine.data(40).energy;
     dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
     resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
     anaDose     = resultGUI.physicalDose;
+    
+%  % analytical dose with fine sampling
+%     pln.propDoseCalc.anaMode = 'fineSampling';
+%     pln.propDoseCalc.fineSampling.N = 11;
+%     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
+%     resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
+%     resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
+%     anaDoseFS     = resultGUI.physicalDoseFS;
 
  % Monte Carlo dose
     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
