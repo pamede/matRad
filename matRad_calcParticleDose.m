@@ -291,7 +291,7 @@ for i = 1:length(stf) % loop over all beams
                 % range shifter. In the following, we only perform dose calculation for voxels having a radiological depth
                 % that is within the limits of the base data set (-> machine.data(i).dephts). By this means, we only allow  
                 % interpolations in matRad_calcParticleDoseBixel() and avoid extrapolations.
-                offsetRadDepth = machine.data(energyIx).offset - stf(i).ray(j).rangeShifter(k).eqThickness - dR;
+                offsetRadDepth = machine.data(energyIx).offset - stf(i).ray(j).rangeShifter(k).eqThickness + dR;
                 
                 % find depth depended lateral cut off
                 if cutOffLevel >= 1

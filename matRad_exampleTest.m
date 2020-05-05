@@ -53,7 +53,7 @@ pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't /
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
 load protons_generic_MCsquare
-stf.ray.energy = machine.data(25).energy;
+stf.ray.energy = machine.data(39).energy;
 
 
 %% dose calculation
@@ -70,6 +70,13 @@ stf.ray.energy = machine.data(25).energy;
     resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
     resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
     anaFsDose     = resultGUI.physicalDoseFS;
+    
+ % analytical dose with stdCorr
+    pln.propDoseCalc.anaMode = 'stdCorr';
+    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
+    resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
+    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
+    anaScDose     = resultGUI.physicalDoseFS;
 
  % Monte Carlo dose
     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
@@ -78,7 +85,7 @@ stf.ray.energy = machine.data(25).energy;
 
  %% plot doses
 
-matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-% matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+% matRad_compareDose(anaScDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+% matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
 
-    

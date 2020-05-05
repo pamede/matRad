@@ -25,3 +25,14 @@ scenarios/slab01RESULT.mat
 matRad_calcParticleDoseMC.asv
 matRad_exampleTest.asv
 matRad_calcParticleDose.asv
+scenarios/scAlderson01.mat
+scenarios/scAlderson01Result.mat
+scenarios/scLiver01.mat
+scenarios/scLiver01Result.mat
+scenarios/scLung01.mat
+scenarios/scLung01Result.mat
+scenarios/scLung02.mat
+scenarios/scProstate01.mat
+scenarios/scSlab01.mat
+scenarios/scSlab01Result.mat
+*.asv

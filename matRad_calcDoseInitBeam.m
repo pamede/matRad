@@ -48,7 +48,6 @@ geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
 
 % Calculate radiological depth cube
 matRad_cfg.dispInfo('matRad: calculate radiological depth cube... ');
-radDepthVctGrid = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
 
 if strcmp(anaMode, 'stdCorr')
     
