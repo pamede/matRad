@@ -17,11 +17,24 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 % load scSlab01
-% load scAlderson01
+load scAlderson01
 % load scLiver01
 % load scLung01
 % load scLung02
-load scProstate01.mat
+% load scProstate01.mat
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 %% dose calculation
  % analytical dose without fine sampling

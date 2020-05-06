@@ -152,7 +152,34 @@ for i = 1:length(stf) % loop over all beams
     cutOffLevel = matRad_cfg.propDoseCalc.defaultLateralCutOff;
     visBoolLateralCutOff = 0;
     machine = matRad_calcLateralParticleCutOff(machine,cutOffLevel,stf(i),visBoolLateralCutOff);
-    matRad_cfg.dispInfo('done.\n');    
+    matRad_cfg.dispInfo('done.\n');
+    
+    for iRay = 1:size(stf(i).ray, 2)
+        x(iRay) = stf(i).ray(iRay).rayPos_bev(1);
+        y(iRay) = stf(i).ray(iRay).rayPos_bev(3);
+    end
+
+    xLim = [min(x), max(x)];
+    yLim = [min(y), max(y)];
+    
+    edge = 10;
+    
+    gridSize = [0.5, 0.5];
+    
+    [gridX, gridY] = meshgrid(xLim(1) - edge:gridSize(1):xLim(2) + edge, yLim(1) - edge:gridSize(2):yLim(2) + edge);
+    gridX = reshape(gridX, numel(gridX), 1);
+    gridY = reshape(gridY, numel(gridY), 1);
+
+    usedEnergies = unique([stf(i).ray.energy]);
+    
+    
+%     [ixWeight, finalWeight] = matRad_calcGriddedWeights(mu, gridSize, gridX, gridY, sigmaTot, thresh, sigmaSub)
+
+    
+    
+    
+    
+    
 
     for j = 1:stf(i).numOfRays % loop over all rays
 
@@ -163,6 +190,8 @@ for i = 1:length(stf) % loop over all beams
             energyIx = max(round2(stf(i).ray(j).energy,4)) == round2([machine.data.energy],4);
 
             maxLateralCutoffDoseCalc = max(machine.data(energyIx).LatCutOff.CutOff);
+            
+            
 
             if strcmp(anaMode, 'fineSampling')  
                 % Ray tracing for beam i and ray j
