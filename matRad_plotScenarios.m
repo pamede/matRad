@@ -4,7 +4,7 @@ matRad_rc
 % load scSlab01Result
 % load scAlderson01Result
 % load scLiver01Result
-load scLung01Result
+% load scLung01Result
 
 anaSum = sum((anaDose - mcDose).^2,'all');
 fsSum = sum((anaFsDose - mcDose).^2,'all');
