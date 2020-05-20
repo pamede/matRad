@@ -16,10 +16,10 @@
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-% load scSlab01
+load scSlab01
 % load scAlderson01
 % load scLiver01
-load scLung01
+% load scLung01
 % load scLung02
 % load scProstate01.mat
 
@@ -30,13 +30,13 @@ load scLung01
     resultGUI = matRad_calcCubes(weights,dij);
     anaDose     = resultGUI.physicalDose;
     
- % analytical dose with fine sampling
-    pln.propDoseCalc.anaMode = 'fineSampling';
-    pln.propDoseCalc.fineSampling.N = 11;
-    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_FS = matRad_calcCubes(weights,dijFS);
-    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
-    anaFsDose     = resultGUI.physicalDoseFS;
+%  % analytical dose with fine sampling
+%     pln.propDoseCalc.anaMode = 'fineSampling';
+%     pln.propDoseCalc.fineSampling.N = 11;
+%     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
+%     resultGUI_FS = matRad_calcCubes(weights,dijFS);
+%     resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
+%     anaFsDose     = resultGUI.physicalDoseFS;
     
  % analytical dose with stdCorr
     pln.propDoseCalc.anaMode = 'stdCorr';
@@ -51,14 +51,28 @@ load scLung01
     weight(weight < 0) = 0;
     cStdCtGrid = weight .* cStdCtGrid;
     anaCvDose = matRad_sliceConvnFilter(ct, anaDose,cStdCtGrid);
-    resultGUI.physicalDoseConv = anaConvDose; 
+    resultGUI.physicalDoseConv = anaCvDose; 
 
  % Monte Carlo dose
     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,weights, 1e6);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
     mcDose      = resultGUI.physicalDoseMC;
     
-    % tmpcStdCtGrid = imgaussfilt3(cStdCtGrid,1);
+    
+maxDose = max(max(anaCvDose, [], 'all'));
+
+figure
+imagesc(anaCvDose(:,:,round(stf(1).isoCenter(3)/ct.resolution.z))');
+caxis([0 maxDose]);
+hold on 
+contour(anaCvDose(:,:,round(stf(1).isoCenter(3)/ct.resolution.z))',linspace(0,maxDose,16),'color','black');
+contour(ct.cube{1}(:,:,round(stf(1).isoCenter(3)/ct.resolution.z))',linspace(0,1,1),'color','white','linewidth',3);
+
+hold off
+pbaspect([ct.cubeDim(1), ct.cubeDim(2), ct.cubeDim(3)])
+xlabel('x [mm]') 
+ylabel('y [mm]') 
+
 
 % weight = arrayfun(@(d) interp1(machine.data(36).depths, (machine.data(36).Z.profileORG-machine.data(36).Z.profileORG(1))/max(machine.data(36).Z.profileORG),d), meanRadDepths);
 % weight = arrayfun(@(d) (d/machine.data(36).peakPos).^5, meanRadDepths);
