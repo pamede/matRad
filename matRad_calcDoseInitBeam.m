@@ -14,6 +14,10 @@ if strcmp(anaMode, 'stdCorr')
     [yCoordsV_vox, xCoordsV_vox, zCoordsV_vox] = ind2sub(ct.cubeDim,newIx);
 end
 
+
+
+                            
+                            
 % convert voxel indices to real coordinates using iso center of beam i
 xCoordsV       = xCoordsV_vox(:)*ct.resolution.x-stf(i).isoCenter(1);
 yCoordsV       = yCoordsV_vox(:)*ct.resolution.y-stf(i).isoCenter(2);
@@ -30,6 +34,8 @@ coordsVdoseGrid  = [xCoordsVdoseGrid yCoordsVdoseGrid zCoordsVdoseGrid];
 % transformation of the coordinate system need double transpose
 
 rotMat_system_T = matRad_getRotationMatrix(stf(i).gantryAngle,stf(i).couchAngle);
+
+
 
 % Rotate coordinates (1st couch around Y axis, 2nd gantry movement)
 rot_coordsV         = coordsV*rotMat_system_T;
@@ -48,6 +54,39 @@ geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
 
 % Calculate radiological depth cube
 matRad_cfg.dispInfo('matRad: calculate radiological depth cube... ');
+  
+
+newStf.numOfRays = 1;
+newStf.gantryAngle = 0;
+newStf.couchAngle  = 0;
+
+newStf.SAD = 75;
+newStf.sourcePoint = [0, -newStf.SAD, 0];
+newStf.sourcePoint_bev = newStf.sourcePoint;
+newStf.ray.rayPos_bev = [0, 0, 0];
+
+interval = -2:0.1:2;
+counter = 1;
+for ixX = interval
+    offX = -ixX;
+    offY = 0;
+    newStf.isoCenter = [stf(i).isoCenter(1) + offX ...
+                        stf(i).isoCenter(2)  ...
+                        stf(i).isoCenter(3) + offY];
+    coordsVnew(:,1) = coordsV(:,1) - offX;
+    coordsVnew(:,2) = coordsV(:,2) + newStf.SAD;
+    coordsVnew(:,3) = coordsV(:,3) - offY;
+
+    effectiveLateralCutoff = 50;
+    [~, radDepthsMat] = matRad_rayTracing(newStf,ct,VctGrid,coordsVnew,effectiveLateralCutoff);
+    casts(:,:,:,counter) = radDepthsMat{1};
+%     imagesc(radDepthsMat{1}(:,:,25))
+    counter = counter + 1;
+end
+w = normpdf(interval, 0, 0.5);
+cStdMap = std(casts,w,4);
+imagesc(cStdMap(:,:,25))
+figure
 
 if strcmp(anaMode, 'stdCorr')
     
@@ -135,7 +174,8 @@ if strcmp(anaMode, 'stdCorr')
 
     cStdCtGridMat{1} = matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z, cStdCtGrid, ...
                                 dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest');
-
+    imagesc(cStdCtGridMat{1}(:,:,25));
+    
     meanRadDepths = {meanRadDepths(VctGrid)};
     cStdCtGrid = {cStdCtGrid(VctGrid)};
     radDepthVctGrid{1} = radDepthVctGrid{1}(VctGrid);
