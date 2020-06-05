@@ -16,8 +16,8 @@
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-% load scSlab01
-load scAlderson01
+load scSlab01
+% load scAlderson01
 % load scLiver01
 % load scLung01
 % load scLung02
@@ -43,6 +43,13 @@ load scAlderson01
     resultGUI = matRad_calcCubes(weights,dij);
     anaDose     = resultGUI.physicalDose;
     
+% Monte Carlo dose
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,weights, 1e6);
+    resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
+    mcDose      = resultGUI.physicalDoseMC;
+    
+    matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+
  % analytical dose with fine sampling
     pln.propDoseCalc.anaMode = 'fineSampling';
     pln.propDoseCalc.fineSampling.N = 21;
@@ -58,10 +65,7 @@ load scAlderson01
     resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
     anaScDose     = resultGUI.physicalDoseSC;
 
- % Monte Carlo dose
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,weights, 5e7);
-    resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
-    mcDose      = resultGUI.physicalDoseMC;
+ 
 
  %% plot doses
 

@@ -1,5 +1,8 @@
 matRad_cfg.dispInfo('Beam %d of %d:\n',i,dij.numOfBeams);
 
+
+
+
 % remember beam and bixel number
 if calcDoseDirect
     dij.beamNum(i)    = i;
@@ -157,11 +160,13 @@ if strcmp(anaMode, 'stdCorr')
         (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,cStdCtGrid);
 end
 
-if strcmp(anaMode, 'fineSampling')
+% if strcmp(anaMode, 'fineSampling')
     % interpolate radiological depth cube used for fine sampling to dose grid resolution
     radDepthsMat{1} = matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z, radDepthsMat{1}, ...
                                     dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest');
-end
+                                
+    
+% end
 
 % limit rotated coordinates to positions where ray tracing is availabe
 rot_coordsVdoseGrid = rot_coordsVdoseGrid(~isnan(radDepthVdoseGrid{1}),:);
