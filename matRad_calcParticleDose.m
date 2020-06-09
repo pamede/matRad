@@ -1,4 +1,4 @@
-function dij = matRad_calcParticleDose(ct,stf,pln,cst,calcDoseDirect)
+function physicalDose = matRad_calcParticleDose(ct,stf,pln,cst)
 % matRad particle dose calculation wrapper
 % 
 % call
@@ -141,271 +141,175 @@ effectiveLateralCutoff = matRad_cfg.propDoseCalc.defaultGeometricCutOff;
 matRad_cfg.dispInfo('matRad: Particle dose calculation...\n');
 counter = 0;
 
-%% if gridded fine sampling
 
-gridsize = [1,1];
-[gridX, gridY] = matRad_createGrid(stf, gridsize);
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+beam = struct;
+for i = 1:length(stf) % loop over all beams
+    weightedGrid.energy = [];
+    gridsize = [2, 2];
+    [gridX, gridY] = matRad_createGrid(stf(i), gridsize);
 
-newStf = matRad_createGridStf(ct, stf, gridX, gridY, [2, 2]);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for i = 1:length(newStf) % loop over all beams
+    for j = 1:stf(i).numOfRays % loop over all rays
+        j
+        sigmaIni = matRad_calcSigmaIni(machine.data,stf(1).ray(j),stf(i).ray(j).SSD);
+        rayEnergies = stf(i).ray(j).energy;
+        for k = 1:stf(i).numOfBixelsPerRay(j) % loop over all bixels per ray
+            energy = rayEnergies(k);
+            if isempty(intersect([weightedGrid(:).energy], energy))
+                ixEnergy = size([weightedGrid.energy], 2) + 1;
+                weightedGrid(ixEnergy).energy = energy;
+                weightedGrid(ixEnergy).weights =  zeros(size(gridX));
+            else
+                [~, ixEnergy]= intersect([weightedGrid(:).energy], energy);
+            end
+            [~, weights] = matRad_calcGriddedWeights([stf(i).ray(j).rayPos_bev(1) stf(i).ray(j).rayPos_bev(3)], ...
+                                            gridsize, gridX, gridY, sigmaIni(k), 0, 2);
+            weightedGrid(ixEnergy).weights = [weightedGrid(ixEnergy).weights(:)] + weights';   
+        end
+    end
     
-    % init beam
-    matRad_calcDoseInitBeam;
-  
-    % Determine lateral cutoff
-    matRad_cfg.dispInfo('matRad: calculate lateral cutoff...');
+    % convert voxel indices to real coordinates using iso center of beam i
+    xCoordsV       = xCoordsV_vox(:)*ct.resolution.x-stf(i).isoCenter(1);
+    yCoordsV       = yCoordsV_vox(:)*ct.resolution.y-stf(i).isoCenter(2);
+    zCoordsV       = zCoordsV_vox(:)*ct.resolution.z-stf(i).isoCenter(3);
+    coordsV        = [xCoordsV yCoordsV zCoordsV];
+
+    xCoordsVdoseGrid = xCoordsV_voxDoseGrid(:)*dij.doseGrid.resolution.x-stf(i).isoCenter(1);
+    yCoordsVdoseGrid = yCoordsV_voxDoseGrid(:)*dij.doseGrid.resolution.y-stf(i).isoCenter(2);
+    zCoordsVdoseGrid = zCoordsV_voxDoseGrid(:)*dij.doseGrid.resolution.z-stf(i).isoCenter(3);
+    coordsVdoseGrid  = [xCoordsVdoseGrid yCoordsVdoseGrid zCoordsVdoseGrid];
+
+    % Get Rotation Matrix
+    % Do not transpose matrix since we usage of row vectors &
+    % transformation of the coordinate system need double transpose
+
+    rotMat_system_T = matRad_getRotationMatrix(stf(i).gantryAngle,stf(i).couchAngle);
+
+    % Rotate coordinates (1st couch around Y axis, 2nd gantry movement)
+    rot_coordsV         = coordsV*rotMat_system_T;
+    rot_coordsVdoseGrid = coordsVdoseGrid*rotMat_system_T;
+
+    rot_coordsV(:,1) = rot_coordsV(:,1)-stf(i).sourcePoint_bev(1);
+    rot_coordsV(:,2) = rot_coordsV(:,2)-stf(i).sourcePoint_bev(2);
+    rot_coordsV(:,3) = rot_coordsV(:,3)-stf(i).sourcePoint_bev(3);
+
+    rot_coordsVdoseGrid(:,1) = rot_coordsVdoseGrid(:,1)-stf(i).sourcePoint_bev(1);
+    rot_coordsVdoseGrid(:,2) = rot_coordsVdoseGrid(:,2)-stf(i).sourcePoint_bev(2);
+    rot_coordsVdoseGrid(:,3) = rot_coordsVdoseGrid(:,3)-stf(i).sourcePoint_bev(3);
+
+    % calculate geometric distances
+    geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
+
+    % Calculate radiological depth cube
+    matRad_cfg.dispInfo('matRad: calculate radiological depth cube... ');
+    [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
+    
+    % interpolate radiological depth cube to dose grid resolution
+    radDepthVdoseGrid = matRad_interpRadDepth...
+    (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,radDepthVctGrid);
+
+    % interpolate radiological depth cube used for fine sampling to dose grid resolution
+    radDepthsMat{1} = matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z, radDepthsMat{1}, ...
+                                    dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest');
+      
+    %sub set of voxels for which radiological depth calculations are available
+    availableIx = find(~isnan(radDepthVdoseGrid{1}));
+        
+    matRad_cfg.dispInfo('done.\n');  
     cutOffLevel = matRad_cfg.propDoseCalc.defaultLateralCutOff;
     visBoolLateralCutOff = 0;
-    machine = matRad_calcLateralParticleCutOff(machine,cutOffLevel,newStf(i),visBoolLateralCutOff);
-    matRad_cfg.dispInfo('done.\n'); 
-
-    for j = 1:newStf(i).numOfRays % loop over all rays
-
-        if ~isempty(newStf(i).ray(j).energy)
-
-            % find index of maximum used energy (round to keV for numerical
-            % reasons
-            energyIx = max(round2(newStf(i).ray(j).energy,4)) == round2([machine.data.energy],4);
-
-            maxLateralCutoffDoseCalc = max(machine.data(energyIx).LatCutOff.CutOff);
-            
-            
-            % Ray tracing for beam i and ray j
-            [ix,~,~,~,latDistsX,latDistsZ] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
-                                                 newStf(i).sourcePoint_bev, ...
-                                                 newStf(i).ray(j).targetPoint_bev, ...
-                                                 machine.meta.SAD, ...
-                                                 find(~isnan(radDepthVdoseGrid{1})), ...
-                                                 maxLateralCutoffDoseCalc);
-
-
-            % evaluate initial sigma for every energy in ray
-            sigmaIni = matRad_calcSigmaIni(machine.data,newStf(i).ray(j),newStf(i).ray(j).SSD);
-            
-            % just use tissue classes of voxels found by ray tracer
-            if (isequal(pln.propOpt.bioOptimization,'LEMIV_effect') || isequal(pln.propOpt.bioOptimization,'LEMIV_RBExD')) ... 
-                && strcmp(pln.radiationMode,'carbon')
-                    vTissueIndex_j = vTissueIndex(ix,:);
-            end
-
-            for k = 1:newStf(i).numOfBixelsPerRay(j) % loop over all bixels per ray
-
-                counter = counter + 1;
-                bixelsPerBeam = bixelsPerBeam + 1;
-                
-                % Display progress and update text only 200 times
-                if mod(bixelsPerBeam,max(1,round(newStf(i).totalNumOfBixels/200))) == 0
-                        matRad_progress(bixelsPerBeam/max(1,round(newStf(i).totalNumOfBixels/200)),...
-                                        floor(newStf(i).totalNumOfBixels/max(1,round(newStf(i).totalNumOfBixels/200))));
-                end
-                
-                % update waitbar only 100 times if it is not closed
-                if mod(counter,round(dij.totalNumOfBixels/100)) == 0 && ishandle(figureWait)
-                    waitbar(counter/dij.totalNumOfBixels,figureWait);
-                end
-
-                % remember beam and bixel number
-                if ~calcDoseDirect
-                   dij.beamNum(counter)  = i;
-                   dij.rayNum(counter)   = j;
-                   dij.bixelNum(counter) = k;
-                end
-                
-                % find energy index in base data
-                energyIx = find(round2(newStf(i).ray(j).energy(k),4) == round2([machine.data.energy],4));
-                
-                % adjust radDepth according to range shifter and include
-                % correction for matRad simulating particles traveling
-                % through vacuum instead of air between nozzle and skin
-                if  pln.propDoseCalc.airOffsetCorrection   
-                    if ~isfield(machine.meta, 'fitAirOffset') 
-                        fitAirOffset = 0;
-%                         warning('Could not find fitAirOffset. Using default value.');
-                    else
-                        fitAirOffset = machine.meta.fitAirOffset;
-                    end
-                    
-                    if ~isfield(machine.meta, 'BAMStoIsoDist') 
-                        BAMStoIsoDist = 400;
-                    	warning('Could not find BAMStoIsoDist. Using default value.');
-                    else
-                        BAMStoIsoDist = machine.meta.BAMStoIsoDist;
-                    end
-                    
-                    nozzleToSkin = ((newStf(i).ray(j).SSD + BAMStoIsoDist) - machine.meta.SAD);
-                    dR = 0.0011 * (nozzleToSkin - fitAirOffset);
-                    
-                else
-                    dR = 0;
-                end                   
-                          
-                liveRay = newStf.ray(j);
-                posZ = liveRay.rayPos_bev(1);
-                posX = liveRay.rayPos_bev(3);
-                
-                % calculate projected coordinates for fine sampling of
-                % each beamlet
-                projCoords = matRad_projectOnComponents(VdoseGrid(ix), size(radDepthsMat{1}), newStf(i).sourcePoint_bev,...
-                                newStf(i).ray(j).targetPoint_bev, newStf(i).isoCenter,...
-                                [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
-                                -posX, -posZ, rotMat_system_T);
-
-                % interpolate radiological depths at projected
-                % coordinates
-                radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
-                    projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest',0.5);
-
-                % compute radial distances relative to pencil beam
-                % component
-                currRadialDist_sq = reshape(bsxfun(@plus,latDistsX,posX(:,k)'),[],1,1).^2 + reshape(bsxfun(@plus,latDistsZ,posZ(:,k)'),[],1,1).^2;
-               
-                    
-                    
-                    
-                    
-                % create offset vector to account for additional offsets modelled in the base data and a potential 
-                % range shifter. In the following, we only perform dose calculation for voxels having a radiological depth
-                % that is within the limits of the base data set (-> machine.data(i).dephts). By this means, we only allow  
-                % interpolations in matRad_calcParticleDoseBixel() and avoid extrapolations.
-                offsetRadDepth = machine.data(energyIx).offset - newStf(i).ray(j).rangeShifter(k).eqThickness + dR;
-                
-                % find depth depended lateral cut off
-                if cutOffLevel >= 1
-                    currIx = radDepths <= machine.data(energyIx).depths(end) + offsetRadDepth;
-                elseif cutOffLevel < 1 && cutOffLevel > 0
-                    % perform rough 2D clipping
-                    currIx = radDepths <= machine.data(energyIx).depths(end) + offsetRadDepth & ...
-                         currRadialDist_sq <= max(machine.data(energyIx).LatCutOff.CutOff.^2);
-
-                    % peform fine 2D clipping  
-                    if length(machine.data(energyIx).LatCutOff.CutOff) > 1
-                        currIx(currIx) = matRad_interp1((machine.data(energyIx).LatCutOff.depths + offsetRadDepth)',...
-                            (machine.data(energyIx).LatCutOff.CutOff.^2)', radDepths(currIx)) >= currRadialDist_sq(currIx);
-                    end
-                else
-                    matRad_cfg.dispError('cutoff must be a value between 0 and 1')
-                end
-                
-                % empty bixels may happen during recalculation of error
-                % scenarios -> skip to next bixel
-                if ~any(currIx)
-                    continue;
-                end
-                
-                
-                
-                
-                if  pln.propDoseCalc.airOffsetCorrection  
-                    currRadDepths = radDepths(currIx) + newStf(i).ray(j).rangeShifter(k).eqThickness + dR;
-                    
-                    %sanity check due to negative corrections
-                    currRadDepths(currRadDepths < 0) = 0;
-                else
-                    currRadDepths = radDepths(currIx) + newStf(i).ray(j).rangeShifter(k).eqThickness;
-                end
-                
-                % calculate initial focus sigma
-                sigmaIni = matRad_interp1(machine.data(energyIx).initFocus.dist (newStf(i).ray(j).focusIx(k),:)', ...
-                                             machine.data(energyIx).initFocus.sigma(newStf(i).ray(j).focusIx(k),:)',newStf(i).ray(j).SSD);
-                sigmaIni_sq = sigmaIni^2;
-                
-                % consider range shifter for protons if applicable
-                if newStf(i).ray(j).rangeShifter(k).eqThickness > 0 && strcmp(pln.radiationMode,'protons')
-                    
-                    % compute!
-                    sigmaRashi = matRad_calcSigmaRashi(machine.data(energyIx).energy, ...
-                                                       newStf(i).ray(j).rangeShifter(k), ...
-                                                       newStf(i).ray(j).SSD);
-                              
-                    % add to initial sigma in quadrature
-                    sigmaIni_sq = sigmaIni_sq +  sigmaRashi^2;
-                end
-                                  
-                
-                % calculate particle dose for bixel k on ray j of beam i
-                bixelDose = matRad_calcParticleDoseBixel(...
-                    radDepths(currIx), ...
-                    currRadialDist_sq(currIx), ...
-                    sigmaIni_sq, ...
-                    machine.data(energyIx));                 
-
-                % dij sampling is exluded for particles until we investigated the influence of voxel sampling for particles
-                %relDoseThreshold   =  0.02;   % sample dose values beyond the relative dose
-                %Type               = 'dose';
-                %[currIx,bixelDose] = matRad_DijSampling(currIx,bixelDose,radDepths(currIx),radialDist_sq(currIx),Type,relDoseThreshold);
-
-                % Save dose for every bixel in cell array
-                doseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} = sparse(VdoseGrid(ix(currIx)),1,bixelDose,dij.doseGrid.numOfVoxels,1);
-
-
-                if isfield(dij,'mLETDose')
-                  % calculate particle LET for bixel k on ray j of beam i
-                  depths = machine.data(energyIx).depths + machine.data(energyIx).offset; 
-                  bixelLET = matRad_interp1(depths,machine.data(energyIx).LET,currRadDepths); 
-
-                  % Save LET for every bixel in cell array
-                  letDoseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} = sparse(VdoseGrid(ix(currIx)),1,bixelLET.*bixelDose,dij.doseGrid.numOfVoxels,1);
-                end
-                             
-                if (isequal(pln.propOpt.bioOptimization,'LEMIV_effect') || isequal(pln.propOpt.bioOptimization,'LEMIV_RBExD')) ... 
-                    && strcmp(pln.radiationMode,'carbon')
-                    % calculate alpha and beta values for bixel k on ray j of                  
-                    [bixelAlpha, bixelBeta] = matRad_calcLQParameter(...
-                        currRadDepths,...
-                        vTissueIndex_j(currIx,:),...
-                        machine.data(energyIx));
-                    
-                    alphaDoseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} = sparse(VdoseGrid(ix(currIx)),1,bixelAlpha.*bixelDose,dij.doseGrid.numOfVoxels,1);
-                    betaDoseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1}  = sparse(VdoseGrid(ix(currIx)),1,sqrt(bixelBeta).*bixelDose,dij.doseGrid.numOfVoxels,1);
-                end
-                
-                matRad_calcDoseFillDij;                
-
-            end
-            
-        end
-        
-    end
-end
-
-stf = matRad_computeSSD(stf, ct);
-energies = sort(unique([stf.ray(:).energy]));
-
-sampledDij  = dij;
-sampledDij = rmfield(sampledDij, 'bixelNum');
-sampledDij = rmfield(sampledDij, 'rayNum');
-sampledDij = rmfield(sampledDij, 'beamNum');
-sampledDij.physicalDose{1} = [];
-
-counter = 1;
-for ixRay = 1:stf(1).numOfRays
-    sigmaIni = matRad_calcSigmaIni(machine.data,stf(1).ray(ixRay),stf(1).ray(ixRay).SSD);
-    for ixBeamlet = 1:stf(1).numOfBixelsPerRay(ixRay)
-        [~, ixEnergy] = intersect(stf(1).ray(ixRay).energy(ixBeamlet),energies);
-        [ixWeight, finalWeight] = matRad_calcGriddedWeights([stf(1).ray(ixRay).rayPos_bev(1) stf(1).ray(ixRay).rayPos_bev(3)], gridsize, gridX, gridY, sigmaIni(ixBeamlet), 0, 2);
-        [~, finalIndex] = intersect([dij.rayNum, dij.bixelNum], [ixWeight', ixEnergy * ones(size(ixWeight))']);
-        w = zeros(newStf.totalNumOfBixels,1);
-        w(finalIndex) = finalWeight;
-        
-        sampledDij.bixelNum(counter) =  ixBeamlet;
-        sampledDij.rayNum(counter) = ixRay;
-        sampledDij.beamNum(counter) = 1;
-        
-        sampledDij.physicalDose{1} = [sampledDij.physicalDose{1} sparse(dij.physicalDose{1} * w)];     
-        counter = counter + 1;
-    end
-end
-
-dij = sampledDij;
-
-try
-  % wait 0.1s for closing all waitbars
-  allWaitBarFigures = findall(0,'type','figure','tag','TMWWaitbar'); 
-  delete(allWaitBarFigures);
-  pause(0.1); 
-catch
-end
-
+    machine = matRad_calcLateralParticleCutOff(machine,cutOffLevel,stf(i),visBoolLateralCutOff);
     
+    doseContainer = zeros(size(radDepthVdoseGrid{1}));
+    
+    for ixEne = 1:size(weightedGrid, 2)
+        energy = weightedGrid(ixEne).energy;
+    
+        [~, energyIx] = intersect([machine.data(:).energy], energy);  
+        
+        projCoords = matRad_projectOnComponents(VdoseGrid(availableIx), size(radDepthsMat{1}), stf(i).sourcePoint_bev,...
+                                        [0, -stf(i).sourcePoint_bev(2), 0], stf(i).isoCenter,...
+                                        [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
+                                        gridY(:), gridX(:), rotMat_system_T);
+
+        % interpolate radiological depths at projected
+        % coordinates
+        radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
+                            projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest',0.5);
+
+        % set density threshold for SSD computation
+        densityThreshold = matRad_cfg.propDoseCalc.ssdDensityThreshold;
+        rotMat_vectors_T = transpose(matRad_getRotationMatrix(pln.propStf.gantryAngles(i),pln.propStf.couchAngles(i)));
+        
+        for ixGrid = 1:size(weightedGrid(ixEne).weights, 1)
+
+            [alpha,~,rho,~,~] = matRad_siddonRayTracer(stf(i).isoCenter, ...
+                                     ct.resolution, ...
+                                     stf(i).sourcePoint, ...
+                                     ([-2 * gridX(ixGrid), -stf(i).sourcePoint_bev(2), -2 * gridY(ixGrid)])* rotMat_vectors_T, ...
+                                     {ct.cube{1}});
+            ixSSD = find(rho{1} > densityThreshold,1,'first');
+
+            % calculate SSD
+            SSD = double(2 * stf(i).SAD * alpha(ixSSD));
+        
+            
+            % calculate initial focus sigma
+            sigmaIni = matRad_interp1(machine.data(energyIx).initFocus.dist (1,:)', ...
+                                         machine.data(energyIx).initFocus.sigma(1,:)',SSD);  % focus index problem???
+            sigmaIni_sq = sigmaIni^2;
+            
+            sourcePoint_bev = -[gridY(ixGrid) -stf(i).SAD gridX(ixGrid)]';
+            targetPoint_bev = -[2 * gridY(ixGrid) stf(i).SAD 2 * gridX(ixGrid)]';
+            a = -sourcePoint_bev';
+
+            % Normalize the vector
+            a = a/norm(a);
+
+            % Put [0 0 0] position in the source point for a single beamlet
+            b = (targetPoint_bev - sourcePoint_bev)';
+
+            % Normalize the vector
+            b = b/norm(b);
+
+            % Define function for obtain rotation matrix.
+            if all(a==b) % rotation matrix corresponds to eye matrix if the vectors are the same
+                rot_coords_temp = rot_coordsVdoseGrid;
+            else
+                % Define rotation matrix
+                ssc = @(v) [0 -v(3) v(2); v(3) 0 -v(1); -v(2) v(1) 0];
+                R   = eye(3) + ssc(cross(a,b)) + ssc(cross(a,b))^2*(1-dot(a,b))/(norm(cross(a,b))^2);
+
+                % Rotate every CT voxel 
+                rot_coords_temp = rot_coordsVdoseGrid*R;
+            end
+
+            % Put [0 0 0] position CT in center of the beamlet.
+            latDistsX = rot_coords_temp(:,1) + sourcePoint_bev(1);
+            latDistsZ = rot_coords_temp(:,3) + sourcePoint_bev(3);
+
+            % check of radial distance exceeds lateral cutoff (projected to iso center)
+            rad_distancesSq = latDistsX.^2 + latDistsZ.^2;
+            currRadialDist_sq = rad_distancesSq(availableIx);
+
+
+            currIx = radDepths(:,:,ixGrid) < machine.data(energyIx).depths(end);  
+            % calculate particle dose for bixel k on ray j of beam i
+            bixelDose = matRad_calcParticleDoseBixel(...
+                radDepths(currIx,:,ixGrid), ...
+                currRadialDist_sq(currIx), ...
+                sigmaIni_sq, ...
+                machine.data(energyIx));   
+            doseContainer(availableIx(currIx)) = doseContainer(availableIx(currIx)) + bixelDose;
+        end
+    end 
+end
+           
+
+doseCube = zeros(prod(dij.doseGrid.dimensions),1);
+doseCube(VdoseGrid) = doseContainer;
+doseCube = reshape(doseCube, dij.doseGrid.dimensions);
+% imagesc(reshape(doseCube(:,25,:),150,50,1));
+imagesc(doseCube(:,:,25));
+physicalDose = doseCube;
+

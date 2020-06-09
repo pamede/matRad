@@ -1,0 +1,50 @@
+function result = matRad_calcFineSamplingDose(gridX, gridY, weightedGrid, stf, dij)
+
+% convert voxel indices to real coordinates using iso center of beam i
+xCoordsV       = xCoordsV_vox(:)*ct.resolution.x-stf(i).isoCenter(1);
+yCoordsV       = yCoordsV_vox(:)*ct.resolution.y-stf(i).isoCenter(2);
+zCoordsV       = zCoordsV_vox(:)*ct.resolution.z-stf(i).isoCenter(3);
+coordsV        = [xCoordsV yCoordsV zCoordsV];
+
+xCoordsVdoseGrid = xCoordsV_voxDoseGrid(:)*dij.doseGrid.resolution.x-stf(i).isoCenter(1);
+yCoordsVdoseGrid = yCoordsV_voxDoseGrid(:)*dij.doseGrid.resolution.y-stf(i).isoCenter(2);
+zCoordsVdoseGrid = zCoordsV_voxDoseGrid(:)*dij.doseGrid.resolution.z-stf(i).isoCenter(3);
+coordsVdoseGrid  = [xCoordsVdoseGrid yCoordsVdoseGrid zCoordsVdoseGrid];
+
+% Get Rotation Matrix
+% Do not transpose matrix since we usage of row vectors &
+% transformation of the coordinate system need double transpose
+
+rotMat_system_T = matRad_getRotationMatrix(stf(i).gantryAngle,stf(i).couchAngle);
+
+% Rotate coordinates (1st couch around Y axis, 2nd gantry movement)
+rot_coordsV         = coordsV*rotMat_system_T;
+rot_coordsVdoseGrid = coordsVdoseGrid*rotMat_system_T;
+
+rot_coordsV(:,1) = rot_coordsV(:,1)-stf(i).sourcePoint_bev(1);
+rot_coordsV(:,2) = rot_coordsV(:,2)-stf(i).sourcePoint_bev(2);
+rot_coordsV(:,3) = rot_coordsV(:,3)-stf(i).sourcePoint_bev(3);
+
+rot_coordsVdoseGrid(:,1) = rot_coordsVdoseGrid(:,1)-stf(i).sourcePoint_bev(1);
+rot_coordsVdoseGrid(:,2) = rot_coordsVdoseGrid(:,2)-stf(i).sourcePoint_bev(2);
+rot_coordsVdoseGrid(:,3) = rot_coordsVdoseGrid(:,3)-stf(i).sourcePoint_bev(3);
+
+% calculate geometric distances
+geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
+
+% Calculate radiological depth cube
+matRad_cfg.dispInfo('matRad: calculate radiological depth cube... ');
+[~, radDepthsMat] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
+matRad_cfg.dispInfo('done.\n');  
+
+projCoords = matRad_projectOnComponents(VdoseGrid(ix), size(radDepthsMat{1}), stf.sourcePoint_bev,...
+                                stf.ray(j).targetPoint_bev, stf.isoCenter,...
+                                [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
+                                -gridY, -griX, rotMat_system_T);
+
+% interpolate radiological depths at projected
+% coordinates
+radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
+                    projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest',0.5);
+                
+results = radDephts;

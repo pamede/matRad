@@ -10,8 +10,8 @@ for i = 1:numel(gridX)
         weight = integral2(@(x,y) gauss(sigmaHead, x, y, mu(1), mu(2)), ...
                                             gridX(i) - (0.5 * gridSize(1)), gridX(i) + (0.5 * gridSize(1)), ...
                                             gridY(i) - (0.5 * gridSize(2)), gridY(i) + (0.5 * gridSize(2)));
-        if weight > thresh
+%         if weight > thresh
             ixWeight = [ixWeight, i];
             finalWeight = [finalWeight, weight];
-        end
+%         end
 end

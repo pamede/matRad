@@ -19,18 +19,18 @@ matRad_rc
 load scSlab01
 % load scAlderson01
 % load scLiver01
-% load scLung01
+% load Lung01
 % load scLung02
 % load scProstate01.mat
 
 
+pln.machine = 'generic_MCsquare';
 
 
 
 
 
-
-
+stf = stf(1);
 
 
 
@@ -39,8 +39,7 @@ load scSlab01
 %% dose calculation
  % analytical dose without fine sampling
     pln.propDoseCalc.anaMode = 'standard';
-    dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI = matRad_calcCubes(weights,dij);
+    resultGUI.physicalDose_FS = matRad_calcParticleDose(ct,stf,pln,cst);
     anaDose     = resultGUI.physicalDose;
     
 % Monte Carlo dose
