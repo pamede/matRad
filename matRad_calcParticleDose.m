@@ -1,4 +1,4 @@
-function physicalDose = matRad_calcParticleDose(ct,stf,pln,cst)
+function dij = matRad_calcParticleDose(ct,stf,pln,cst)
 % matRad particle dose calculation wrapper
 % 
 % call
@@ -37,11 +37,6 @@ matRad_cfg =  MatRad_Config.instance();
 
 % init dose calc
 matRad_calcDoseInit;
-
-% initialize waitbar
-figureWait = waitbar(0,'calculate dose influence matrix for particles...');
-% prevent closure of waitbar and show busy state
-set(figureWait,'pointer','watch');
 
 % helper function for energy selection
 round2 = @(a,b)round(a*10^b)/10^b;
@@ -144,10 +139,18 @@ counter = 0;
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 beam = struct;
+counter = 1;
+
+% book keeping
+
+dij.bixelNum = [];
+dij.rayNum = [];
+dij.beamNum = [];
+
 for i = 1:length(stf) % loop over all beams
     weightedGrid.energy = [];
-    gridsize = [2, 2];
-    [gridX, gridY] = matRad_createGrid(stf(i), gridsize);
+    gridsize = [10, 10];
+    [gridX, gridY] = matRad_createFineSamplingGrid(stf(i), gridsize);
 
     for j = 1:stf(i).numOfRays % loop over all rays
         j
@@ -158,13 +161,19 @@ for i = 1:length(stf) % loop over all beams
             if isempty(intersect([weightedGrid(:).energy], energy))
                 ixEnergy = size([weightedGrid.energy], 2) + 1;
                 weightedGrid(ixEnergy).energy = energy;
-                weightedGrid(ixEnergy).weights =  zeros(size(gridX));
+                weightedGrid(ixEnergy).weights =  zeros(size(gridX,1), stf(i).totalNumOfBixels);
             else
                 [~, ixEnergy]= intersect([weightedGrid(:).energy], energy);
             end
             [~, weights] = matRad_calcGriddedWeights([stf(i).ray(j).rayPos_bev(1) stf(i).ray(j).rayPos_bev(3)], ...
                                             gridsize, gridX, gridY, sigmaIni(k), 0, 2);
-            weightedGrid(ixEnergy).weights = [weightedGrid(ixEnergy).weights(:)] + weights';   
+%             weightedGrid(ixEnergy).weights = [weightedGrid(ixEnergy).weights(:)] + weights';  
+            weightedGrid(ixEnergy).weights(:,counter) = weights';
+            dij.bixelNum = [dij.bixelNum, k];
+            dij.rayNum   = [dij.rayNum,   j];
+            dij.beamNum  = [dij.beamNum,  i];
+
+            counter = counter + 1;
         end
     end
     
@@ -220,9 +229,12 @@ for i = 1:length(stf) % loop over all beams
     visBoolLateralCutOff = 0;
     machine = matRad_calcLateralParticleCutOff(machine,cutOffLevel,stf(i),visBoolLateralCutOff);
     
-    doseContainer = zeros(size(radDepthVdoseGrid{1}));
+    doseContainer = sparse(size(radDepthVdoseGrid{1},1),stf(i).totalNumOfBixels);
+    
+    f = waitbar(0, 'Calculating dose...');
     
     for ixEne = 1:size(weightedGrid, 2)
+        waitbar(ixEne/size(weightedGrid, 2), f, 'Calculating dose...');
         energy = weightedGrid(ixEne).energy;
     
         [~, energyIx] = intersect([machine.data(:).energy], energy);  
@@ -300,16 +312,11 @@ for i = 1:length(stf) % loop over all beams
                 currRadialDist_sq(currIx), ...
                 sigmaIni_sq, ...
                 machine.data(energyIx));   
-            doseContainer(availableIx(currIx)) = doseContainer(availableIx(currIx)) + bixelDose;
+            doseContainer(availableIx(currIx),:) = doseContainer(availableIx(currIx),:) + sparse(weightedGrid(ixEne).weights(ixGrid,:) .* bixelDose);
         end
     end 
+    dij.physicalDose{i} = doseContainer;
+    close(f)
 end
            
-
-doseCube = zeros(prod(dij.doseGrid.dimensions),1);
-doseCube(VdoseGrid) = doseContainer;
-doseCube = reshape(doseCube, dij.doseGrid.dimensions);
-% imagesc(reshape(doseCube(:,25,:),150,50,1));
-imagesc(doseCube(:,:,25));
-physicalDose = doseCube;
 

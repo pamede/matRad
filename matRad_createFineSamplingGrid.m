@@ -1,4 +1,4 @@
-function [gridX, gridY] = matRad_createGrid(stf, gridsize)
+function [gridX, gridY] = matRad_createFineSamplingGrid(stf, gridsize)
  
 margin = [5, 5];
 positions = [stf.ray(:).rayPos_bev];

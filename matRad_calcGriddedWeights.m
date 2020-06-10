@@ -14,4 +14,11 @@ for i = 1:numel(gridX)
             ixWeight = [ixWeight, i];
             finalWeight = [finalWeight, weight];
 %         end
+
+% %%%%
+% intfun = @(x,y) gauss(sigmaHead, x, y, mu(1), mu(2));
+% 
+% weight = arryfun(@(x,y) integral2(@intfun, x - (0.5 * gridSize(1)), x + (0.5 * gridSize(1)), y - (0.5 * gridSize(2)), y + (0.5 * gridSize(2)),...
+%                         gridX, gridY);
+
 end

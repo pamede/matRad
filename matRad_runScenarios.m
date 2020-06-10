@@ -17,24 +17,15 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 load scSlab01
-% load scAlderson01
+% load Alderson01
 % load scLiver01
 % load Lung01
 % load scLung02
 % load scProstate01.mat
 
-
-pln.machine = 'generic_MCsquare';
-
-
-
-
-
 stf = stf(1);
 
-
-
-
+pln.machine = 'generic_MCsquare';
 
 %% dose calculation
  % analytical dose without fine sampling
@@ -63,8 +54,6 @@ stf = stf(1);
     resultGUI_SC = matRad_calcCubes(weights,dijSC);
     resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
     anaScDose     = resultGUI.physicalDoseSC;
-
- 
 
  %% plot doses
 

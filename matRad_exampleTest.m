@@ -17,7 +17,7 @@
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-load scSlab01.mat
+load Slab01.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -53,7 +53,7 @@ load protons_generic_MCsquare
 %% dose calculation
  % analytical dose without fine sampling
     pln.propDoseCalc.anaMode = 'standard';
-    dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
+    dij = matRad_calcParticleDose(ct,stf,pln,cst);
     resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
     anaDose     = resultGUI.physicalDose;
     
