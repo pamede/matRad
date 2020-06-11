@@ -1,4 +1,4 @@
-function [ixWeight, finalWeight] = matRad_calcGriddedWeights(mu, gridSize, gridX, gridY, sigmaTot, thresh, sigmaSub)
+function [ixWeight, finalWeight] = matRad_calcGriddedWeights(mu, gridSize, gridX, gridY, sigmaTot, sigmaSub)
                     
 sigmaHead = sqrt(sigmaTot^2 - sigmaSub^2);
 

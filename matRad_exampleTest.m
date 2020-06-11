@@ -14,10 +14,13 @@
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+clear
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-load Slab01.mat
+% load Slab01.mat
+% load PHANTOM_slab_entrance_10mm.mat
+load PHANTOM_control.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -26,8 +29,8 @@ pln.machine         = 'generic_MCsquare';
 pln.numOfFractions  = 30;
 
 % beam geometry settings
-pln.propStf.bixelWidth      = 20; % [mm] / also corresponds to lateral spot spacing for particles
-pln.propStf.longitudinalSpotSpacing = 20;
+pln.propStf.bixelWidth      = 100; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.longitudinalSpotSpacing = 200;
 pln.propStf.gantryAngles    = 0; % [?] 
 pln.propStf.couchAngles     = 0; % [?]
 pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
@@ -48,7 +51,7 @@ pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't /
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
 load protons_generic_MCsquare
-
+stf.ray.energy = machine.data(39).energy;
 
 %% dose calculation
  % analytical dose without fine sampling
@@ -56,21 +59,6 @@ load protons_generic_MCsquare
     dij = matRad_calcParticleDose(ct,stf,pln,cst);
     resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
     anaDose     = resultGUI.physicalDose;
-    
- % analytical dose with fine sampling
-    pln.propDoseCalc.anaMode = 'fineSampling';
-    pln.propDoseCalc.fineSampling.N = 21;
-    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
-    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
-    anaFsDose     = resultGUI.physicalDoseFS;
-    
- % analytical dose with stdCorr
-    pln.propDoseCalc.anaMode = 'stdCorr';
-    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
-    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
-    anaScDose     = resultGUI.physicalDoseFS;
 
  % Monte Carlo dose
     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
@@ -80,6 +68,4 @@ load protons_generic_MCsquare
  %% plot doses
 
 matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-% matRad_compareDose(anaScDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-% matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-
+% ma    tRadGUI

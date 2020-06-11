@@ -1,6 +1,6 @@
 function [gridX, gridY] = matRad_createFineSamplingGrid(stf, gridsize)
  
-margin = [5, 5];
+margin = [20, 20];
 positions = [stf.ray(:).rayPos_bev];
 xLimits = [min(positions(1:3:end))-margin(1), max(positions(1:3:end))+margin(1)];
 yLimits = [min(positions(3:3:end))-margin(2), max(positions(3:3:end))+margin(1)];
