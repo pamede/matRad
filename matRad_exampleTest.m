@@ -19,8 +19,8 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 % load Slab01.mat
-% load PHANTOM_slab_entrance_10mm.mat
-load PHANTOM_control.mat
+load PHANTOM_slab_entrance_10mm.mat
+% load PHANTOM_control.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -61,7 +61,7 @@ stf.ray.energy = machine.data(39).energy;
     anaDose     = resultGUI.physicalDose;
 
  % Monte Carlo dose
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 5e6);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
     mcDose      = resultGUI.physicalDoseMC;
 

@@ -9,9 +9,9 @@ stf.ray.rayPos_bev = [0, 0, 0];
 mu = [0, 0];
 sigmaTot = 5.1832;
 thresh = 0;
-sigmaSub = 1;
+sigmaSub = 2;
 
-[ixWeight, finalWeight] = matRad_calcGriddedWeights(mu, gridSize, gridX, gridY, sigmaTot, thresh, sigmaSub);
+[ixWeight, finalWeight] = matRad_calcGriddedWeights(mu, gridSize, gridX, gridY, sigmaTot, sigmaSub);
 
 
 [plotGridX, plotGridY] = meshgrid(-20:1:20, -20:1:20);

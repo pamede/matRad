@@ -155,22 +155,27 @@ for i = 1:length(stf) % loop over all beams
 
     for j = 1:stf(i).numOfRays % loop over all rays
         j
-        sigmaInitial = matRad_calcSigmaIni(machine.data,stf(1).ray(j),stf(i).ray(j).SSD) / 1.9;
+        sigmaInitial = matRad_calcSigmaIni(machine.data,stf(1).ray(j),stf(i).ray(j).SSD);
         rayEnergies = stf(i).ray(j).energy;
         for k = 1:stf(i).numOfBixelsPerRay(j) % loop over all bixels per ray
             energy = rayEnergies(k);
             if isempty(intersect([weightedGrid(:).energy], energy))
                 ixEnergy = size([weightedGrid.energy], 2) + 1;
                 weightedGrid(ixEnergy).energy = energy;
-                weightedGrid(ixEnergy).weights =  zeros(size(gridX));
-%                 weightedGrid(ixEnergy).weights =  zeros(size(gridX,1), stf(i).totalNumOfBixels);
+%                 weightedGrid(ixEnergy).weights =  zeros(size(gridX));
+                weightedGrid(ixEnergy).weights =  zeros(size(gridX,1), stf(i).totalNumOfBixels);
             else
                 [~, ixEnergy]= intersect([weightedGrid(:).energy], energy);
             end
             [~, weights] = matRad_calcGriddedWeights([stf(i).ray(j).rayPos_bev(1) stf(i).ray(j).rayPos_bev(3)], ...
                                             gridsize, gridX, gridY, sigmaInitial(k), sigmaSub);
-            weightedGrid(ixEnergy).weights = [weightedGrid(ixEnergy).weights(:)] + weights';  
-%             weightedGrid(ixEnergy).weights(:,counter) = weights';
+%             weightedGrid(ixEnergy).weights = [weightedGrid(ixEnergy).weights(:)] + weights';  
+            weightedGrid(ixEnergy).weights(:,counter) = weights';
+
+
+            
+
+
             dij.bixelNum = [dij.bixelNum; k];
             dij.rayNum   = [dij.rayNum;   j];
             dij.beamNum  = [dij.beamNum;  i];
@@ -254,9 +259,21 @@ for i = 1:length(stf) % loop over all beams
         densityThreshold = matRad_cfg.propDoseCalc.ssdDensityThreshold;
         rotMat_vectors_T = transpose(matRad_getRotationMatrix(pln.propStf.gantryAngles(i),pln.propStf.couchAngles(i)));
         
+        [plotGridX, plotGridY] = meshgrid(-20:1:20, -20:1:20);
+
+        gauss = @(sigma, x, y, muX, muY) 1 / (2 * pi * sigma^2) .* exp(-((x + muX).^2 + (y + muY).^2) / (2 * sigma^2)); 
+
+        erg = gauss(sigmaInitial, plotGridX, plotGridY, 0, 0);
+
+        surf(erg)
+
+        summ = zeros(size(plotGridX));  
+            
+            
         for ixGrid = 1:size(weightedGrid(ixEne).weights, 1)
-            sourcePoint_bev = -[gridY(ixGrid) -stf(i).SAD gridX(ixGrid)]';
-            targetPoint_bev = -[2 * gridY(ixGrid) stf(i).SAD 2 * gridX(ixGrid)]';
+%             sourcePoint_bev = [gridY(ixGrid) -stf(i).SAD gridX(ixGrid)]';
+            sourcePoint_bev = [0 -stf(i).SAD 0]';
+            targetPoint_bev = [2 * gridY(ixGrid) stf(i).SAD 2 * gridX(ixGrid)]';
             
             [~, rad_distancesSq] = matRad_calcGeoDists(rot_coordsV, ...
                                               sourcePoint_bev, ...
@@ -266,18 +283,34 @@ for i = 1:length(stf) % loop over all beams
                                               1000);
             
             currIx = radDepths(:,:,ixGrid) < machine.data(energyIx).depths(end);  
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            tmp = weightedGrid(ixEne).weights(ixGrid,:) * gauss(sigmaSub, plotGridX, plotGridY, gridX(ixGrid), gridY(ixGrid));
+            summ = summ + tmp;
+%             figure
+%             surf(summ)
+            
+
+            
+            
+            
+            
+            
             % calculate particle dose for bixel k on ray j of beam i
             bixelDose = matRad_calcParticleDoseBixel(...
                 radDepths(currIx,:,ixGrid), ...
                 rad_distancesSq(currIx), ...
                 sigmaSub^2, ...
                 machine.data(energyIx));   
-            doseContainer(availableIx(currIx),:) = doseContainer(availableIx(currIx),:) + sparse(weightedGrid(ixEne).weights(ixGrid) .* bixelDose);
+            doseContainer(availableIx(currIx),:) = doseContainer(availableIx(currIx),:) + sparse(weightedGrid(ixEne).weights(ixGrid,:) .* bixelDose);
         end
+        figure
+        surf(summ)
+        
     end 
     
 end
-   
 dij.physicalDose{1} = doseContainer;
-close(f)
+% close(f)
 
