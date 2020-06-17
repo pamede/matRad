@@ -11,7 +11,8 @@ sigmaTot = 5.1832;
 thresh = 0;
 sigmaSub = 2;
 
-[ixWeight, finalWeight] = matRad_calcGriddedWeights(mu, gridSize, gridX, gridY, sigmaTot, sigmaSub);
+finalWeight = matRad_calcGriddedWeights(mu, gridSize, gridX, gridY, sigmaTot, sigmaSub);
+finalWeight(finalWeight < max(finalWeight)/100) =0;
 
 
 [plotGridX, plotGridY] = meshgrid(-20:1:20, -20:1:20);

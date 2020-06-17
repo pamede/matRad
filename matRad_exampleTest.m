@@ -19,8 +19,8 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 % load Slab01.mat
-load PHANTOM_slab_entrance_10mm.mat
-% load PHANTOM_control.mat
+% load PHANTOM_slab_entrance_10mm.mat
+load PHANTOM_control.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -37,9 +37,9 @@ pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter       = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
                             
 % dose calculation settings
-pln.propDoseCalc.doseGrid.resolution.x = 1; % [mm]
-pln.propDoseCalc.doseGrid.resolution.y = 1; % [mm]
-pln.propDoseCalc.doseGrid.resolution.z = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.x = 2; % [mm]
+pln.propDoseCalc.doseGrid.resolution.y = 2; % [mm]
+pln.propDoseCalc.doseGrid.resolution.z = 2; % [mm]
 
 % optimization settings
 pln.propOpt.optimizer       = 'IPOPT';
@@ -56,12 +56,14 @@ stf.ray.energy = machine.data(39).energy;
 %% dose calculation
  % analytical dose without fine sampling
     pln.propDoseCalc.anaMode = 'standard';
+    tic
     dij = matRad_calcParticleDose(ct,stf,pln,cst);
+    toc
     resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
     anaDose     = resultGUI.physicalDose;
 
  % Monte Carlo dose
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 5e6);
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
     mcDose      = resultGUI.physicalDoseMC;
 

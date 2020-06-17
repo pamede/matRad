@@ -16,48 +16,33 @@
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-load scSlab01
+% load scSlab01
 % load Alderson01
 % load scLiver01
-% load Lung01
+load Lung01
 % load scLung02
 % load scProstate01.mat
 
-stf = stf(1);
+% meta information for treatment plan
+pln.radiationMode   = 'protons';     
+pln.machine         = 'generic_MCsquare';
 
-pln.machine = 'generic_MCsquare';
 
 %% dose calculation
  % analytical dose without fine sampling
     pln.propDoseCalc.anaMode = 'standard';
-    resultGUI.physicalDose_FS = matRad_calcParticleDose(ct,stf,pln,cst);
+    tic
+    dij = matRad_calcParticleDose(ct,stf,pln,cst);
+    toc
+    resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
     anaDose     = resultGUI.physicalDose;
-    
-% Monte Carlo dose
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,weights, 1e6);
+
+ % Monte Carlo dose
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
     mcDose      = resultGUI.physicalDoseMC;
-    
-    matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-
- % analytical dose with fine sampling
-    pln.propDoseCalc.anaMode = 'fineSampling';
-    pln.propDoseCalc.fineSampling.N = 21;
-    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_FS = matRad_calcCubes(weights,dijFS);
-    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
-    anaFsDose     = resultGUI.physicalDoseFS;
-    
- % analytical dose with stdCorr
-    pln.propDoseCalc.anaMode = 'stdCorr';
-    dijSC = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_SC = matRad_calcCubes(weights,dijSC);
-    resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
-    anaScDose     = resultGUI.physicalDoseSC;
 
  %% plot doses
 
 matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-% matRad_compareDose(anaScDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-% matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-
+% ma    tRadGUI
