@@ -14,6 +14,7 @@
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+clear
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
@@ -21,8 +22,8 @@ matRad_rc
 % load TG119
 % load BOXPHANTOM.mat
 % load PHANTOM_control.mat
-load PHANTOM_slab_entrance_10mm.mat
-% load ALDERSON.mat
+% load PHANTOM_slab_entrance_10mm.mat
+load ALDERSON.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -31,17 +32,17 @@ pln.machine         = 'generic_MCsquare';
 pln.numOfFractions  = 30;
 
 % beam geometry settings
-pln.propStf.bixelWidth      = 200; % [mm] / also corresponds to lateral spot spacing for particles
-pln.propStf.longitudinalSpotSpacing = 200;
+pln.propStf.bixelWidth      = 10; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.longitudinalSpotSpacing = 10;
 pln.propStf.gantryAngles    = 0; % [?] 
 pln.propStf.couchAngles     = 0; % [?]
 pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter       = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
                             
 % dose calculation settings
-pln.propDoseCalc.doseGrid.resolution.x = 1; % [mm]
-pln.propDoseCalc.doseGrid.resolution.y = 1; % [mm]
-pln.propDoseCalc.doseGrid.resolution.z = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.x = 3; % [mm]
+pln.propDoseCalc.doseGrid.resolution.y = 3; % [mm]
+pln.propDoseCalc.doseGrid.resolution.z = 3; % [mm]
 
 % optimization settings
 pln.propOpt.optimizer       = 'IPOPT';
@@ -57,27 +58,29 @@ stf.ray.energy = machine.data(39).energy;
 
 
 %% dose calculation
- % analytical dose without fine sampling
-    pln.propDoseCalc.anaMode = 'standard';
-    dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
-    anaDose     = resultGUI.physicalDose;
+%  % analytical dose without fine sampling
+%     pln.propDoseCalc.anaMode = 'standard';
+%     dij = matRad_calcParticleDose(ct,stf,pln,cst,false);
+%     resultGUI = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dij);
+%     anaDose     = resultGUI.physicalDose;
     
  % analytical dose with fine sampling
     pln.propDoseCalc.anaMode = 'fineSampling';
-    pln.propDoseCalc.fineSampling.N = 21;
+    pln.propDoseCalc.fineSampling.N = 41;
+    tic
     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
+    toc
     resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
     resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
     anaFsDose     = resultGUI.physicalDoseFS;
     
- % analytical dose with stdCorr
-    pln.propDoseCalc.anaMode = 'stdCorr';
-    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
-    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
-    anaScDose     = resultGUI.physicalDoseFS;
-
+%  % analytical dose with stdCorr
+%     pln.propDoseCalc.anaMode = 'stdCorr';
+%     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
+%     resultGUI_FS = matRad_calcCubes(ones(sum([stf(:).totalNumOfBixels]),1),dijFS);
+%     resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
+%     anaScDose     = resultGUI.physicalDoseFS;
+% 
  % Monte Carlo dose
     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
@@ -85,7 +88,7 @@ stf.ray.energy = machine.data(39).energy;
 
  %% plot doses
 
-matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
 % matRad_compareDose(anaScDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
 % matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
 

@@ -56,37 +56,37 @@ geoDistVdoseGrid{1}= sqrt(sum(rot_coordsVdoseGrid.^2,2));
 matRad_cfg.dispInfo('matRad: calculate radiological depth cube... ');
   
 
-newStf.numOfRays = 1;
-newStf.gantryAngle = 0;
-newStf.couchAngle  = 0;
-
-newStf.SAD = 75;
-newStf.sourcePoint = [0, -newStf.SAD, 0];
-newStf.sourcePoint_bev = newStf.sourcePoint;
-newStf.ray.rayPos_bev = [0, 0, 0];
-
-interval = -2:0.1:2;
-counter = 1;
-for ixX = interval
-    offX = -ixX;
-    offY = 0;
-    newStf.isoCenter = [stf(i).isoCenter(1) + offX ...
-                        stf(i).isoCenter(2)  ...
-                        stf(i).isoCenter(3) + offY];
-    coordsVnew(:,1) = coordsV(:,1) - offX;
-    coordsVnew(:,2) = coordsV(:,2) + newStf.SAD;
-    coordsVnew(:,3) = coordsV(:,3) - offY;
-
-    effectiveLateralCutoff = 50;
-    [~, radDepthsMat] = matRad_rayTracing(newStf,ct,VctGrid,coordsVnew,effectiveLateralCutoff);
-    casts(:,:,:,counter) = radDepthsMat{1};
-%     imagesc(radDepthsMat{1}(:,:,25))
-    counter = counter + 1;
-end
-w = normpdf(interval, 0, 0.5);
-cStdMap = std(casts,w,4);
-imagesc(cStdMap(:,:,25))
-figure
+% newStf.numOfRays = 1;
+% newStf.gantryAngle = 0;
+% newStf.couchAngle  = 0;
+% 
+% newStf.SAD = 75;
+% newStf.sourcePoint = [0, -newStf.SAD, 0];
+% newStf.sourcePoint_bev = newStf.sourcePoint;
+% newStf.ray.rayPos_bev = [0, 0, 0];
+% 
+% interval = -2:0.1:2;
+% counter = 1;
+% for ixX = interval
+%     offX = -ixX;
+%     offY = 0;
+%     newStf.isoCenter = [stf(i).isoCenter(1) + offX ...
+%                         stf(i).isoCenter(2)  ...
+%                         stf(i).isoCenter(3) + offY];
+%     coordsVnew(:,1) = coordsV(:,1) - offX;
+%     coordsVnew(:,2) = coordsV(:,2) + newStf.SAD;
+%     coordsVnew(:,3) = coordsV(:,3) - offY;
+% 
+%     effectiveLateralCutoff = 50;
+%     [~, radDepthsMat] = matRad_rayTracing(newStf,ct,VctGrid,coordsVnew,effectiveLateralCutoff);
+%     casts(:,:,:,counter) = radDepthsMat{1};
+% %     imagesc(radDepthsMat{1}(:,:,25))
+%     counter = counter + 1;
+% end
+% w = normpdf(interval, 0, 0.5);
+% cStdMap = std(casts,w,4);
+% imagesc(cStdMap(:,:,25))
+% figure
 
 if strcmp(anaMode, 'stdCorr')
     

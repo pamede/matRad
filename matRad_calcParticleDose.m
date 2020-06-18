@@ -281,7 +281,7 @@ for i = 1:length(stf) % loop over all beams
                     % interpolate radiological depths at projected
                     % coordinates
                     radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
-                        projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest',0.5);
+                        projCoords(:,2,:)./dij.doseGrid.resolution.y,projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest');
 
                     % compute radial distances relative to pencil beam
                     % component
