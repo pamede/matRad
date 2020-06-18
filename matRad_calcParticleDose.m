@@ -146,18 +146,18 @@ beam = struct;
 dij.bixelNum = [];
 dij.rayNum = [];
 dij.beamNum = [];
-sigmaSub = 2;
+sigmaSub = 1;
 
 matRad_cfg.dispInfo('matRad: calculate fine sampling weights... ');
 physicalDose = [];
 for i = 1:length(stf) % loop over all beams
     weightedGrid.energy = [];
-    gridsize = [2,2];
+    gridsize = [1,1];
     [gridX, gridY] = matRad_createFineSamplingGrid(stf(i), gridsize);
 
     counter = 1;
     for j = 1:stf(i).numOfRays % loop over all rays
-        j
+        j/stf(i).numOfRays * 100
         sigmaInitial = matRad_calcSigmaIni(machine.data,stf(1).ray(j),stf(i).ray(j).SSD);
         rayEnergies = stf(i).ray(j).energy;
         for k = 1:stf(i).numOfBixelsPerRay(j) % loop over all bixels per ray

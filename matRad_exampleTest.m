@@ -19,8 +19,8 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 % load Slab01.mat
-% load PHANTOM_slab_entrance_10mm.mat
-load PHANTOM_control.mat
+load PHANTOM_slab_entrance_10mm.mat
+% load PHANTOM_control.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     

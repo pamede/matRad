@@ -17,9 +17,9 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 % load scSlab01
-% load Alderson01
+load Alderson01
 % load scLiver01
-load Lung01
+% load Lung01
 % load scLung02
 % load scProstate01.mat
 
