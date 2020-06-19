@@ -152,7 +152,7 @@ matRad_cfg.dispInfo('matRad: calculate fine sampling weights... ');
 physicalDose = [];
 for i = 1:length(stf) % loop over all beams
     weightedGrid.energy = [];
-    gridsize = [1,1];
+    gridsize = [2,2];
     [gridX, gridY] = matRad_createFineSamplingGrid(stf(i), gridsize);
 
     counter = 1;
@@ -237,7 +237,7 @@ for i = 1:length(stf) % loop over all beams
     visBoolLateralCutOff = 0;
     machine = matRad_calcLateralParticleCutOff(machine,cutOffLevel,stf(i),visBoolLateralCutOff);
     
-    doseContainer = sparse(size(radDepthVdoseGrid{1},1),stf(i).totalNumOfBixels);
+    doseContainer = sparse(prod(dij.doseGrid.dimensions),stf(i).totalNumOfBixels);
     
     projCoords = matRad_projectOnComponents(VdoseGrid(availableIx), size(radDepthsMat{1}), stf(i).sourcePoint_bev,...
                                         [0, -stf(i).sourcePoint_bev(2), 0], stf(i).isoCenter,...
@@ -270,6 +270,7 @@ for i = 1:length(stf) % loop over all beams
                                               stf(i).SAD, ...
                                               radDepths, ...
                                               1000);
+            rad_distancesSq = rad_distancesSq(availableIx);
             
             currIx = radDepths(:,:,ixGrid) < machine.data(energyIx).depths(end);  
             
@@ -279,7 +280,9 @@ for i = 1:length(stf) % loop over all beams
                 rad_distancesSq(currIx), ...
                 sigmaSub^2, ...
                 machine.data(energyIx));   
-            doseContainer(availableIx(currIx),:) = doseContainer(availableIx(currIx),:) + sparse(weightedGrid(ixEne).weights(ixGrid,:) .* bixelDose);
+            doseContainer(VdoseGrid(availableIx(currIx)),:) = doseContainer(VdoseGrid(availableIx(currIx)),:) ...
+                        + sparse(weightedGrid(ixEne).weights(ixGrid,:) .* bixelDose); 
+
         end    
     end 
     physicalDose = [physicalDose, doseContainer];

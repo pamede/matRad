@@ -13,15 +13,11 @@
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+clear
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-% load scSlab01
-load Alderson01
-% load scLiver01
-% load Lung01
-% load scLung02
-% load scProstate01.mat
+load scLung01small.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -38,11 +34,11 @@ pln.machine         = 'generic_MCsquare';
     anaDose     = resultGUI.physicalDose;
 
  % Monte Carlo dose
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e7);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
     mcDose      = resultGUI.physicalDoseMC;
 
  %% plot doses
 
 matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
-% ma    tRadGUI
+% matRadGUI
