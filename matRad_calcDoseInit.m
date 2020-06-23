@@ -6,31 +6,6 @@ if ~exist('calcDoseDirect','var')
     calcDoseDirect = false;
 end
 
-% assing analytical mode
-% if isfield(pln.propDoseCalc,'fineSampling') && strcmp(pln.radiationMode, 'protons')
-if strcmp(pln.propDoseCalc.anaMode, 'fineSampling')
-    anaMode = 'fineSampling';
-    if isfield(pln.propDoseCalc.fineSampling,'N')
-        fineSamplingN = pln.propDoseCalc.fineSampling.N;
-    else
-        fineSamplingN = 21;
-    end
-    if isfield(pln.propDoseCalc.fineSampling,'sigmaSub')    
-        fineSamplingSigmaSub = pln.propDoseCalc.fineSampling.sigmaSub;
-    else
-        fineSamplingSigmaSub = 1;
-    end
-    if isfield(pln.propDoseCalc.fineSampling,'method')    
-        fineSamplingMethod = pln.propDoseCalc.fineSampling.method;
-    else
-        fineSamplingMethod = 'russo';
-    end
-elseif strcmp(pln.propDoseCalc.anaMode, 'stdCorr')
-    anaMode = 'stdCorr';
-else
-    anaMode = 'standard';
-end
-
 % to guarantee downwards compatibility with data that does not have
 % ct.x/y/z
 if ~any(isfield(ct,{'x','y','z'}))

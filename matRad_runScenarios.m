@@ -17,7 +17,9 @@ clear
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-load scLung01small.mat
+% load scLung01small.mat
+% load alderson01.mat
+load PHANTOM_control.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -26,7 +28,6 @@ pln.machine         = 'generic_MCsquare';
 
 %% dose calculation
  % analytical dose without fine sampling
-    pln.propDoseCalc.anaMode = 'standard';
     tic
     dij = matRad_calcParticleDose(ct,stf,pln,cst);
     toc

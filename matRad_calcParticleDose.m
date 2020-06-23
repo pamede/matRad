@@ -239,6 +239,42 @@ for i = 1:length(stf) % loop over all beams
     
     doseContainer = sparse(prod(dij.doseGrid.dimensions),stf(i).totalNumOfBixels);
     
+    neededIx = zeros(size(gridX));
+    for ixEne = 1:size(weightedGrid, 2)
+        
+        gridWeights = sum(weightedGrid(ixEne).weights,2);
+        weightSum = sum(weightedGrid(ixEne).weights,'all')/size(gridX,1);
+        neededIx = neededIx + gridWeights > weightSum / 10;
+    end
+    
+    for ixEne = 1:size(weightedGrid, 2)
+        
+        weightedGrid(ixEne).weights = weightedGrid(ixEne).weights(find(neededIx),:);
+    end
+    gridX = gridX(find(neededIx));
+    gridY = gridY(find(neededIx));
+    
+    % adjust radDepth according to range shifter and include
+    % correction for matRad simulating particles traveling
+    % through vacuum instead of air between nozzle and skin
+    if ~isfield(machine.meta, 'fitAirOffset') 
+        fitAirOffset = 0;
+    else
+        fitAirOffset = machine.meta.fitAirOffset;
+    end
+
+    if ~isfield(machine.meta, 'BAMStoIsoDist') 
+        BAMStoIsoDist = 400;
+        warning('Could not find BAMStoIsoDist. Using default value.');
+    else
+        BAMStoIsoDist = machine.meta.BAMStoIsoDist;
+    end
+
+    nozzleToSkin = ((stf(i).ray(j).SSD + BAMStoIsoDist) - machine.meta.SAD);
+    dR = 0.0011 * (nozzleToSkin - fitAirOffset);
+                
+                
+    
     projCoords = matRad_projectOnComponents(VdoseGrid(availableIx), size(radDepthsMat{1}), stf(i).sourcePoint_bev,...
                                         [0, -stf(i).sourcePoint_bev(2), 0], stf(i).isoCenter,...
                                         [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
@@ -248,18 +284,23 @@ for i = 1:length(stf) % loop over all beams
     % coordinates
     radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
                         projCoords(:,2,:)./dij.doseGrid.resolution.y,...
-                        projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest');
+                        projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest') + dR;
     matRad_cfg.dispInfo('done.\n');      
-                    
+      
+    
+    
     for ixEne = 1:size(weightedGrid, 2)
         ixEne/size(weightedGrid, 2)*100
         energy = weightedGrid(ixEne).energy;
     
         [~, energyIx] = intersect([machine.data(:).energy], energy);  
         
+        gridWeights = sum(weightedGrid(ixEne).weights,2);
+        weightSum = sum(weightedGrid(ixEne).weights,'all')/size(gridX,1);
+        neededIx = gridWeights > weightSum / 10 ;
+        gridArray = find(neededIx);
         
-    
-        for ixGrid = 1:size(weightedGrid(ixEne).weights, 1)
+        for ixGrid = gridArray'
             
             sourcePoint_bev = [0 -stf(i).SAD 0]';
             targetPoint_bev = [2 * gridX(ixGrid) stf(i).SAD 2 * gridY(ixGrid)]';
