@@ -16,12 +16,17 @@
 matRad_rc
 
 % load patient data, i.e. ct, voi, cst
-load scSlab01
+% load scSlab01
 % load Alderson01
 % load scLiver01
 % load scLung01
 % load scLung02
 % load scProstate01.mat
+load scAldersonFsComp1.mat
+pln.propDoseCalc.doseGrid.resolution.x = 7;
+pln.propDoseCalc.doseGrid.resolution.y = 7;
+pln.propDoseCalc.doseGrid.resolution.z = 7;
+
 
 %% dose calculation
  % analytical dose without fine sampling
@@ -30,26 +35,29 @@ load scSlab01
 %     resultGUI = matRad_calcCubes(weights,dij);
 %     anaDose     = resultGUI.physicalDose;
 %     
-%  % analytical dose with fine sampling
-%     pln.propDoseCalc.anaMode = 'fineSampling';
-%     pln.propDoseCalc.fineSampling.N = 23;
-%     dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
-%     resultGUI_FS = matRad_calcCubes(weights,dijFS);
-%     resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
-%     anaFsDose     = resultGUI.physicalDoseFS;
+ % analytical dose with fine sampling
+    pln.propDoseCalc.anaMode = 'fineSampling';
+    pln.propDoseCalc.fineSampling.N = 23;
+    tic
+    dijFS = matRad_calcParticleDose(ct,stf,pln,cst,false);
+    toc
+    resultGUI_FS = matRad_calcCubes(ones(stf.totalNumOfBixels,1),dijFS);
+    resultGUI.physicalDoseFS = resultGUI_FS.physicalDose;
+    anaFsDose     = resultGUI.physicalDoseFS;
 %     
- % analytical dose with stdCorr
-    pln.propDoseCalc.anaMode = 'stdCorr';
-    dijSC = matRad_calcParticleDose(ct,stf,pln,cst,false);
-    resultGUI_SC = matRad_calcCubes(weights,dijSC);
-    resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
-    anaScDose     = resultGUI.physicalDoseSC;
+%  % analytical dose with stdCorr
+%     pln.propDoseCalc.anaMode = 'stdCorr';
+%     dijSC = matRad_calcParticleDose(ct,stf,pln,cst,false);
+%     resultGUI_SC = matRad_calcCubes(weights,dijSC);
+%     resultGUI.physicalDoseSC = resultGUI_SC.physicalDose;
+%     anaScDose     = resultGUI.physicalDoseSC;
 
-%  % Monte Carlo dose
-%     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,weights, 1e6);
-%     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
-%     mcDose      = resultGUI.physicalDoseMC;
+ % Monte Carlo dose
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(stf.totalNumOfBixels,1), 1e6);
+    resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
+    mcDose      = resultGUI.physicalDoseMC;
 
+    matRad_compareDose(anaFsDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
  %% plot doses
  
 maxDose = max(max(anaScDose, [], 'all'));

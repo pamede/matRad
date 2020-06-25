@@ -140,6 +140,7 @@ effectiveLateralCutoff = matRad_cfg.propDoseCalc.defaultGeometricCutOff;
 
 matRad_cfg.dispInfo('matRad: Particle dose calculation...\n');
 counter = 0;
+CalcCounter = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for i = 1:length(stf) % loop over all beams
@@ -362,6 +363,7 @@ for i = 1:length(stf) % loop over all beams
                                 currRadialDist_sq(currIx(:,:,c),:,c), ...
                                 sigmaSub(k)^2, ...
                                 machine.data(energyIx));
+                        CalcCounter = CalcCounter + 1;
                                                         
                         tmpDose(currIx(:,:,c)) = bixelDose;
                         totalDose = totalDose + tmpDose;
@@ -448,6 +450,7 @@ for i = 1:length(stf) % loop over all beams
         end
         
     end
+    CalcCounter
 end
 
 try
