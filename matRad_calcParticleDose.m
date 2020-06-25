@@ -149,7 +149,7 @@ dij.beamNum = [];
 sigmaSub = 1;
 matRad_cfg.dispInfo('matRad: calculate fine sampling weights... ');
 physicalDose = [];
-
+beamWiseBixelCounter = 0;
 for i = 1:length(stf) % loop over all beams
     f = waitbar(0,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     
@@ -297,7 +297,7 @@ for i = 1:length(stf) % loop over all beams
     
     matRad_cfg.dispInfo('matRad: calculate fine sampling dose... ');
     dijFS =  sparse(prod(dij.doseGrid.dimensions), size(gridX,1));
-    dijPosition = 0;
+    dijPosition = beamWiseBixelCounter;
     f = waitbar(0,['Calculating fine sampling dose, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     for ixEne = 1:size(weightedGrid, 2)
         
@@ -308,20 +308,38 @@ for i = 1:length(stf) % loop over all beams
     
         [~, energyIx] = intersect([machine.data(:).energy], energy);  
         
-%         gridWeights = sum(weightedGrid(ixEne).weights,2);
+        gridIx = [];
+        for ixBixel = 1:size(weightedGrid(ixEne).weights,2)
+            cutOff = 0.05;
+    %         bixelFactor = 1+cutOff/(1-cutOff);
+            [weights, ixRe] = sort(weightedGrid(ixEne).weights(:,ixBixel));
+            cumWeights = cumsum(weights);
+            cutIx = cumWeights > cutOff * cumWeights(end);
+            gridIx = [gridIx; ixRe(cutIx)];
+        end
+        gridIx = unique(gridIx);
+       
+%         sum(weights)
+%         sum(weights(cutIx)) * bixelFactor
+        
+        scatter(gridX, gridY);
+        hold on
+        scatter(gridX(gridIx), gridY(gridIx));
+        hold off
+%         
 %         weightSum = sum(weightedGrid(ixEne).weights,'all')/size(gridX,1);
 %         neededIx = gridWeights > weightSum / 10 ;
 %         gridArray = find(neededIx);
         
-        for ixGrid = 1:size(gridX,1)
-                       
+        for ixGrid = gridIx'
+            
 %             tmp = zeros(prod(dij.doseGrid.dimensions),1);
-% %             tmp = full(dijFS(:,1));
-%             tmp(VdoseGrid(availableIx)) = rad_distancesSq(:,1);
+%             tmp = full(dijFS(:,ix));
+% %             tmp(VdoseGrid(availableIx)) = radDepths(:,1,1);
 %             tmo1 = reshape(tmp,dij.doseGrid.dimensions);
-%             imagesc(tmo1(:,:,70));
-%             
-                                          
+%             imagesc(tmo1(:,:,12));
+
+                       
             rad_distancesSq = radialDist(availableIx,ixGrid).^2;
             
             currIx = radDepths(:,:,ixGrid) < machine.data(energyIx).depths(end);  
@@ -346,6 +364,7 @@ for i = 1:length(stf) % loop over all beams
     end 
     close(f);
     matRad_cfg.dispInfo('done.\n'); 
+    beamWiseBixelCounter = beamWiseBixelCounter + stf(i).totalNumOfBixels;
 end
 
 

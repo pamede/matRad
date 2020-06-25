@@ -18,14 +18,9 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 % load scLung01small.mat
-load alderson01.mat
+% load alderson01.mat
 % load PHANTOM_control.mat
-
-% meta information for treatment plan
-pln.radiationMode   = 'protons';     
-pln.machine         = 'generic_MCsquare';
-
-stf = stf(1);
+load scAldersonFsComp1.mat
 
 %% dose calculation
  % analytical dose without fine sampling
