@@ -140,9 +140,9 @@ counter = 0;
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 beam = struct;
 
-
 % book keeping
 
+CalcCounter = 0;
 dij.bixelNum = [];
 dij.rayNum = [];
 dij.beamNum = [];
@@ -150,6 +150,7 @@ sigmaSub = 1;
 matRad_cfg.dispInfo('matRad: calculate fine sampling weights... ');
 physicalDose = [];
 beamWiseBixelCounter = 0;
+tic
 for i = 1:length(stf) % loop over all beams
     f = waitbar(0,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     
@@ -193,6 +194,8 @@ for i = 1:length(stf) % loop over all beams
     weightedGrid = weightedGrid(ixS);
     close(f);
     matRad_cfg.dispInfo('done.\n');
+    toc
+    
     % convert voxel indices to real coordinates using iso center of beam i
     xCoordsV       = xCoordsV_vox(:)*ct.resolution.x-stf(i).isoCenter(1);
     yCoordsV       = yCoordsV_vox(:)*ct.resolution.y-stf(i).isoCenter(2);
@@ -227,8 +230,9 @@ for i = 1:length(stf) % loop over all beams
 
     % Calculate radiological depth cube
     matRad_cfg.dispInfo('matRad: calculate radiological depth cube... ');
+    tic
     [radDepthVctGrid, radDepthsMat] = matRad_rayTracing(stf(i),ct,VctGrid,rot_coordsV,effectiveLateralCutoff);
-    
+    toc
     % interpolate radiological depth cube to dose grid resolution
     radDepthVdoseGrid = matRad_interpRadDepth...
     (ct,1,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,radDepthVctGrid);
@@ -279,18 +283,22 @@ for i = 1:length(stf) % loop over all beams
     nozzleToSkin = ((stf(i).ray(j).SSD + BAMStoIsoDist) - machine.meta.SAD);
     dR = 0.0011 * (nozzleToSkin - fitAirOffset);
                 
-                
+    tic          
     projCoords = matRad_projectOnComponents(VdoseGrid(availableIx), size(radDepthsMat{1}), stf(i).sourcePoint_bev,...
                                         [0, -stf(i).sourcePoint_bev(2), 0], stf(i).isoCenter,...
                                         [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
                                         gridX(:), gridY(:), rotMat_system_T);
+                                    toc
     % interpolate radiological depths at projected
     % coordinates
+    tic
     radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
                         projCoords(:,2,:)./dij.doseGrid.resolution.y,...
                         projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest') + dR;
-    radialDist = matRad_calcRadialDistance(rot_coordsVdoseGrid, [0 -stf(i).SAD 0], [0 stf(i).SAD 0],gridX,gridY);
-
+                    toc
+                    tic
+    radialDistSq = matRad_calcRadialDistanceSq(rot_coordsVdoseGrid, [0 -stf(i).SAD 0], [0 stf(i).SAD 0],gridX,gridY);
+toc
     %sanity check due to negative corrections
     radDepths(radDepths < 0) = 0;                
     matRad_cfg.dispInfo('done.\n');  
@@ -309,6 +317,7 @@ for i = 1:length(stf) % loop over all beams
         [~, energyIx] = intersect([machine.data(:).energy], energy);  
         
         gridIx = [];
+        tic
         for ixBixel = 1:size(weightedGrid(ixEne).weights,2)
             cutOff = 0.05;
     %         bixelFactor = 1+cutOff/(1-cutOff);
@@ -318,14 +327,15 @@ for i = 1:length(stf) % loop over all beams
             gridIx = [gridIx; ixRe(cutIx)];
         end
         gridIx = unique(gridIx);
+        toc
        
 %         sum(weights)
 %         sum(weights(cutIx)) * bixelFactor
         
-        scatter(gridX, gridY);
-        hold on
-        scatter(gridX(gridIx), gridY(gridIx));
-        hold off
+%         scatter(gridX, gridY);
+%         hold on
+%         scatter(gridX(gridIx), gridY(gridIx));
+%         hold off
 %         
 %         weightSum = sum(weightedGrid(ixEne).weights,'all')/size(gridX,1);
 %         neededIx = gridWeights > weightSum / 10 ;
@@ -340,31 +350,40 @@ for i = 1:length(stf) % loop over all beams
 %             imagesc(tmo1(:,:,12));
 
                        
-            rad_distancesSq = radialDist(availableIx,ixGrid).^2;
+            rad_distancesSq = radialDistSq(availableIx,ixGrid);
             
             currIx = radDepths(:,:,ixGrid) < machine.data(energyIx).depths(end);  
             
             % calculate particle dose for bixel k on ray j of beam i
+            tic
             bixelDose = matRad_calcParticleDoseBixel(...
                 radDepths(currIx,1,ixGrid), ...
                 rad_distancesSq(currIx), ...
                 sigmaSub^2, ...
                 machine.data(energyIx));
-            dijFS(:,ixGrid) = sparse(VdoseGrid(availableIx(currIx)),1,bixelDose,dij.doseGrid.numOfVoxels,1);
+            bixeltim = toc
+            CalcCounter = CalcCounter + 1;
+            tic
+            dijFS(:,ixGrid) = sparse(VdoseGrid(availableIx(currIx)),1,bixelDose,dij.doseGrid.numOfVoxels,1); % 10 times slower than bixel dose
+            dijtim = toc
 %             doseContainer(VdoseGrid(availableIx(currIx)),:) = doseContainer(VdoseGrid(availableIx(currIx)),:) ...
 %                         + sparse(weightedGrid(ixEne).weights(ixGrid,:) .* bixelDose); 
         end 
+        tic
         waitbar(ixEne/size(weightedGrid, 2),f,['Calculating fine sampling dose, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
-
+        tic
         dijPosition = dijPosition(end)+1:dijPosition(end)+size(weightedGrid(ixEne).weights,2);
         dij.physicalDose{1}(:,dijPosition) = dijFS * weightedGrid(ixEne).weights;
+        toc
         dij.bixelNum = [dij.bixelNum; weightedGrid(ixEne).bixelNum'];
         dij.rayNum   = [dij.rayNum;   weightedGrid(ixEne).rayNum'];
         dij.beamNum  = [dij.beamNum;  weightedGrid(ixEne).beamNum'];
+        filltime = toc
     end 
     close(f);
     matRad_cfg.dispInfo('done.\n'); 
     beamWiseBixelCounter = beamWiseBixelCounter + stf(i).totalNumOfBixels;
+    CalcCounter
 end
 
 

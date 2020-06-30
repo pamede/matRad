@@ -20,7 +20,7 @@ matRad_rc
 % load scLung01small.mat
 % load alderson01.mat
 % load PHANTOM_control.mat
-load scAldersonFsComp1.mat
+% load scAldersonFsComp1.mat
 
 %% dose calculation
  % analytical dose without fine sampling
