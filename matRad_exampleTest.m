@@ -34,7 +34,7 @@ pln.machine         = 'generic_MCsquare';
 pln.numOfFractions  = 30;
 
 % beam geometry settings
-pln.propStf.bixelWidth      = 200; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.bixelWidth      = 20; % [mm] / also corresponds to lateral spot spacing for particles
 pln.propStf.longitudinalSpotSpacing = 200;
 pln.propStf.gantryAngles    = [-30, 30]; % [?] 
 pln.propStf.couchAngles     = [  0,  0]; % [?]

@@ -1,0 +1,74 @@
+#TREATMENT-PLAN-DESCRIPTION
+#PlanName
+matRad_bixel
+#NumberOfFractions
+1
+##FractionID
+1
+##NumberOfFields
+2
+###FieldsID
+1
+###FieldsID
+2
+
+#TotalMetersetWeightOfAllFields
+4000000
+
+#FIELD-DESCRIPTION
+###FieldID
+1
+###FinalCumulativeMeterSetWeight
+2000000
+###GantryAngle
+210
+###PatientSupportAngle
+0
+###IsocenterPosition
+155.9303      117.7508       186.887
+###NumberOfControlPoints
+1
+
+#SPOTS-DESCRIPTION
+####ControlPointIndex
+1
+####SpotTunnedID
+1
+####CumulativeMetersetWeight
+2000000
+####Energy (MeV)
+70
+####NbOfScannedSpots
+2
+####X Y Weight
+0  0 150276.0872
+-20  20 150276.0872
+
+#FIELD-DESCRIPTION
+###FieldID
+2
+###FinalCumulativeMeterSetWeight
+2000000
+###GantryAngle
+150
+###PatientSupportAngle
+0
+###IsocenterPosition
+155.9303      117.7508       186.887
+###NumberOfControlPoints
+1
+
+#SPOTS-DESCRIPTION
+####ControlPointIndex
+1
+####SpotTunnedID
+1
+####CumulativeMetersetWeight
+2000000
+####Energy (MeV)
+70
+####NbOfScannedSpots
+2
+####X Y Weight
+20  20 150276.0872
+0  0 150276.0872
