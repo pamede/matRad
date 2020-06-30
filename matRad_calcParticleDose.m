@@ -304,13 +304,13 @@ toc
     matRad_cfg.dispInfo('done.\n');  
     
     matRad_cfg.dispInfo('matRad: calculate fine sampling dose... ');
-    dijFS =  sparse(prod(dij.doseGrid.dimensions), size(gridX,1));
+%     dijFS =  sparse(prod(dij.doseGrid.dimensions), size(gridX,1));
     dijPosition = beamWiseBixelCounter;
     f = waitbar(0,['Calculating fine sampling dose, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     for ixEne = 1:size(weightedGrid, 2)
         
-        dijFS =  sparse(prod(dij.doseGrid.dimensions), size(gridX,1));
-
+        dijFS  =  sparse(prod(dij.doseGrid.dimensions), size(gridX,1));
+        dijFS1 =  {[]};
         
         energy = weightedGrid(ixEne).energy;
     
@@ -364,7 +364,10 @@ toc
             bixeltim = toc
             CalcCounter = CalcCounter + 1;
             tic
-            dijFS(:,ixGrid) = sparse(VdoseGrid(availableIx(currIx)),1,bixelDose,dij.doseGrid.numOfVoxels,1); % 10 times slower than bixel dose
+            dijFS(:,ixGrid)                                           = sparse(VdoseGrid(availableIx(currIx)),1,bixelDose,dij.doseGrid.numOfVoxels,1); % 10 times slower than bixel dose
+            dijFS{1,1} = sparse(VdoseGrid(availableIx(currIx)),1,bixelDose,dij.doseGrid.numOfVoxels,1);
+            %             doseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} =  sparse(VdoseGrid(ix),1,totalDose,dij.doseGrid.numOfVoxels,1);
+%             other fs code dij filling
             dijtim = toc
 %             doseContainer(VdoseGrid(availableIx(currIx)),:) = doseContainer(VdoseGrid(availableIx(currIx)),:) ...
 %                         + sparse(weightedGrid(ixEne).weights(ixGrid,:) .* bixelDose); 
