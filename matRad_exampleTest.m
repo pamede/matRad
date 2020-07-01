@@ -22,10 +22,10 @@ matRad_rc
 % load patient data, i.e. ct, voi, cst
 % load Slab01.mat
 % load PHANTOM_slab_entrance_10mm.mat
-% load PHANTOM_control.mat
+load PHANTOM_control.mat
 % load lung01.mat
-load alderson
-clear pln stf resultGUI
+% load alderson
+% clear pln stf resultGUI
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
@@ -34,17 +34,17 @@ pln.machine         = 'generic_MCsquare';
 pln.numOfFractions  = 30;
 
 % beam geometry settings
-pln.propStf.bixelWidth      = 20; % [mm] / also corresponds to lateral spot spacing for particles
-pln.propStf.longitudinalSpotSpacing = 200;
-pln.propStf.gantryAngles    = [-30, 30]; % [?] 
-pln.propStf.couchAngles     = [  0,  0]; % [?]
+pln.propStf.bixelWidth      = 10; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.longitudinalSpotSpacing = 10;
+pln.propStf.gantryAngles    = [0]; % [?] 
+pln.propStf.couchAngles     = [0]; % [?]
 pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter       = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
                             
 % dose calculation settings
-pln.propDoseCalc.doseGrid.resolution.x = 5; % [mm]
-pln.propDoseCalc.doseGrid.resolution.y = 5; % [mm]
-pln.propDoseCalc.doseGrid.resolution.z = 5; % [mm]
+pln.propDoseCalc.doseGrid.resolution.x = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.y = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.z = 1; % [mm]
 
 % optimization settings
 pln.propOpt.optimizer       = 'IPOPT';
@@ -55,6 +55,8 @@ pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't /
 
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
+% load protons_generic_MCsquare.mat;
+% stf.ray.energy = machine.data(39).energy;
 
 %% dose calculation
  % analytical dose without fine sampling
