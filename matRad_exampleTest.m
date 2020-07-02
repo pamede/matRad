@@ -34,17 +34,17 @@ pln.machine         = 'generic_MCsquare';
 pln.numOfFractions  = 30;
 
 % beam geometry settings
-pln.propStf.bixelWidth      = 10; % [mm] / also corresponds to lateral spot spacing for particles
-pln.propStf.longitudinalSpotSpacing = 10;
+pln.propStf.bixelWidth      = 100; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.longitudinalSpotSpacing = 100;
 pln.propStf.gantryAngles    = [-10]; % [?] 
 pln.propStf.couchAngles     = [  0]; % [?]
 pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter       = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
                             
 % dose calculation settings
-pln.propDoseCalc.doseGrid.resolution.x = 3; % [mm]
-pln.propDoseCalc.doseGrid.resolution.y = 3; % [mm]
-pln.propDoseCalc.doseGrid.resolution.z = 3; % [mm]
+pln.propDoseCalc.doseGrid.resolution.x = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.y = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.z = 1; % [mm]
 
 % optimization settings
 pln.propOpt.optimizer       = 'IPOPT';
@@ -67,11 +67,11 @@ stf = matRad_generateStf(ct,cst,pln);
     anaDose     = resultGUI.physicalDose;
 
  % Monte Carlo dose
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
-    resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
-    mcDose      = resultGUI.physicalDoseMC;
-
- %% plot doses
-
-matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
+%     resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
+%     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
+%     mcDose      = resultGUI.physicalDoseMC;
+% 
+%  %% plot doses
+% 
+% matRad_compareDose(anaDose, mcDose, ct, cst, [1, 1, 0] , 'on', pln, [2,2], 1, 'global');
 % matRadGUI

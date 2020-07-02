@@ -18,9 +18,11 @@ matRad_rc
 
 % load patient data, i.e. ct, voi, cst
 % load scLung01small.mat
-% load alderson01.mat
+load alderson01.mat
 % load PHANTOM_control.mat
-load scAldersonFsComp1.mat
+% load scAldersonFsComp1.mat
+
+pln.machine = 'generic_MCsquare';
 
 %% dose calculation
  % analytical dose without fine sampling

@@ -141,27 +141,27 @@ counter = 0;
 beam = struct;
 
 % book keeping
-
-CalcCounter = 0;
 dij.bixelNum = [];
 dij.rayNum = [];
 dij.beamNum = [];
 sigmaSub = 1;
 
+% set physical dose to zero 
 dij.physicalDose{1} = [];
-beamWiseBixelCounter = 0;
-% tic
+
 for i = 1:length(stf) % loop over all beams
     
     % init beam
     matRad_calcDoseInitBeam;
+    
     matRad_cfg.dispInfo('matRad: calculate fine sampling weights... ');
-
     f = waitbar(0,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     
-    weightedGrid.energy = [];
+    % create fine sampling grid
     gridsize = [2, 2];
     [gridX, gridY] = matRad_createFineSamplingGrid(stf(i), gridsize);
+    
+    % initialise weight container
     weightContainer.weights = [];
     weightContainer.eneNum = [];
     weightContainer.bixelNum = [];
@@ -170,14 +170,22 @@ for i = 1:length(stf) % loop over all beams
     
     counter = 1;
     for j = 1:stf(i).numOfRays % loop over all rays
+        
         waitbar(j/stf(i).numOfRays,f,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
+        
+        % calculate initial sigma and energy for all bixels on ray j
         sigmaInitial = matRad_calcSigmaIni(machine.data,stf(1).ray(j),stf(i).ray(j).SSD);
         rayEnergies = stf(i).ray(j).energy;
         for k = 1:stf(i).numOfBixelsPerRay(j) % loop over all bixels per ray
+            
+            % calculate weights for every bixel for every grid ray
+            % previously created
             weights = matRad_calcGriddedWeights([stf(i).ray(j).rayPos_bev(1) stf(i).ray(j).rayPos_bev(3)], ...
                                             gridsize, -gridX, -gridY, sigmaInitial(k), sigmaSub);
             [~, e] = intersect([machine.data(:).energy], rayEnergies(k));
             weightContainer.weights    = [weightContainer.weights, weights];
+            
+            % book keeping for bixel identification
             weightContainer.eneNum   = [weightContainer.eneNum   ,e];
             weightContainer.bixelNum = [weightContainer.bixelNum ,k];
             weightContainer.rayNum   = [weightContainer.rayNum   ,j];
@@ -187,23 +195,21 @@ for i = 1:length(stf) % loop over all beams
     close(f);
     matRad_cfg.dispInfo('done.\n');
     
+    % throw out all weights that summed up make less than $weightCutOff$ of
+    % all weights 
     sortingWeights = [];
-    weightCutOff = 0.05;
+    weightCutOff = 0.05; % cutoff level for weight selection
     for a = 1:size(weightContainer.weights, 2)
+        
         [tmpW, tmpIx] = sort(weightContainer.weights(:,a));
         wSum  = cumsum(tmpW);
         useIx = cumsum(tmpW) > wSum(end) * weightCutOff;
         sortingWeights = [sortingWeights; tmpIx(useIx), ones(size(tmpIx(useIx))) * weightContainer.eneNum(a)];
     end
     calculateIx = unique(sortingWeights,'rows');
-    
-    
-    
-%     [ab,ac] = unique(calculateIx(:,1))
-%     ff = [];
-%     for a = 1:size(ac,1)
-%         ff(ac(aaa):ac(aaa+1)-1).ray 
-%     
+
+    % rearange stucture of selected weights to allow for better indexing in
+    % for loops 
     [ab,ac] = unique(calculateIx(:,1));
     neededIx = cell(size(ab,1),2);
     for a = 1:size(ab,1)
@@ -214,19 +220,6 @@ for i = 1:length(stf) % loop over all beams
             neededIx{a,2} = calculateIx(ac(a):ac(a+1)-1,2);
         end
     end
-
-%     lookUpRay = calculateIx(1,1);
-%     counter = 1;
-%     www = [];
-%     for aaa = 1:size(calculateIx,1)
-%         if lookUpRay == calculateIx(aaa, 1)
-%             www(counter) = [www(counter), calculateIx(aaa,2)];
-%         else
-%             lookUpRay = calculateIx(aaa, 1);
-%             counter = counter + 1;
-%             www(counter) = [];
-%         end
-%     end
     
     % Determine lateral cutoff
     matRad_cfg.dispInfo('matRad: calculate lateral cutoff...');
@@ -235,37 +228,50 @@ for i = 1:length(stf) % loop over all beams
     cuttOffLevel = 1;
     visBoolLateralCutOff = 0;
     machine = matRad_calcLateralParticleCutOff(machine,cutOffLevel,stf(i),visBoolLateralCutOff);
-    matRad_cfg.dispInfo('done.\n');
-    
     energies = unique(weightContainer.eneNum);
     maxE = max(weightContainer.eneNum(:));
     maxLateralCutoffDoseCalc = max(machine.data(maxE).LatCutOff.CutOff);
-    
+    matRad_cfg.dispInfo('done.\n');
+
+    % calculate SSD needed for air offset correction, for every grid ray
     SSDs = matRad_computeGridSSD(pln.propStf.gantryAngles(i), pln.propStf.couchAngles(i), stf(i),ct, gridX, gridY);
 
+    % loop over all grid rays that need to be calculated according to
+    % weight selection before
     rayCounter = 1;    
     f = waitbar(0,['Calculating unweighted grid dose, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     gridDoseContainer = cell(size(gridX,1), size(energies,1), 2);
     for ixGridRay = [neededIx{:,1}]
         waitbar(ixGridRay/size(weightContainer.weights,1),f,['Calculating unweighted grid dose, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
 
+        % calculate radial distances according to lateral cutoff
         [ix,currRadialDist_sq,~,~,~,~] = matRad_calcGeoDists(rot_coordsVdoseGrid, ...
                                                          stf(i).sourcePoint_bev, ...
                                                          [2*gridX(ixGridRay), -stf(i).sourcePoint_bev(2), 2*gridY(ixGridRay)], ...
                                                          machine.meta.SAD, ...
                                                          find(~isnan(radDepthVdoseGrid{1})), ...
                                                          maxLateralCutoffDoseCalc);
-                                                     
+        
+        % calculate projected coordinates, representing a ray cast on the
+        % now selected new grid ray, using the first ray cast done in
+        % matRad_calcDoseInitBeam
         projCoords = matRad_projectOnComponents(VdoseGrid(ix), size(radDepthsMat{1}), stf(i).sourcePoint_bev,...
                                     -stf(i).sourcePoint_bev, stf(i).isoCenter,...
                                     [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
                                     gridX(ixGridRay), gridY(ixGridRay), rotMat_system_T);
-                                
-       if ~isfield(machine.meta, 'fitAirOffset') 
+         
+        % throw out Coordinates that would result in NaN values in radDepths                        
+        projCoords(projCoords(:,1) <= dij.doseGrid.resolution.x,1) = dij.doseGrid.resolution.x + 0.0001;
+        projCoords(projCoords(:,2) <= dij.doseGrid.resolution.y,2) = dij.doseGrid.resolution.y + 0.0001;
+        projCoords(projCoords(:,3) <= dij.doseGrid.resolution.z,3) = dij.doseGrid.resolution.z + 0.0001;
+                       
+        % calculate air offset, that accounts for matRad transporting
+        % through vacuum from nozzle to skin and not through air
+        if ~isfield(machine.meta, 'fitAirOffset') 
             fitAirOffset = 0;
         else
             fitAirOffset = machine.meta.fitAirOffset;
-       end
+        end
         if ~isfield(machine.meta, 'BAMStoIsoDist') 
             BAMStoIsoDist = 400;
         else
@@ -274,11 +280,17 @@ for i = 1:length(stf) % loop over all beams
 
         nozzleToSkin = ((SSDs(ixGridRay).SSD + BAMStoIsoDist) - machine.meta.SAD);
         dR = 0.0011 * (nozzleToSkin - fitAirOffset);
-                                          
+             
+        % interpolate actual radDepths for grid ray using projected
+        % coordinates
         radDepths = interp3(radDepthsMat{1},projCoords(:,1,:)./dij.doseGrid.resolution.x,...
                         projCoords(:,2,:)./dij.doseGrid.resolution.y,...
                         projCoords(:,3,:)./dij.doseGrid.resolution.z,'nearest') + dR;
-                  
+         
+        % sanity check after applying air offset correction
+        radDepths(radDepths < 0) = 0;            
+        
+        % loop over all needed energies on this particular grid ray
         for ixEne = [neededIx{rayCounter,2}]'
             
            % find depth depended lateral cut off
@@ -305,7 +317,8 @@ for i = 1:length(stf) % loop over all beams
                     currRadialDist_sq(currIx), ...
                     sigmaSub^2, ...
                     machine.data(ixEne));
- 
+            
+            % fill grid dose container
             [~, xe] = intersect(energies, ixEne);
             gridDoseContainer{ixGridRay,xe,1} = bixelDose;
             gridDoseContainer{ixGridRay,xe,2} = VdoseGrid(ix(currIx));
@@ -317,6 +330,8 @@ for i = 1:length(stf) % loop over all beams
     
     bixelContainer = cell(size(weightContainer.weights,1),1);
     
+    % calculate dose for every bixel, using grid dose container and making
+    % everything sparse
     f = waitbar(0,['Calculating weighted dij, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     for t = 1:size(weightContainer.weights,2)
        waitbar(t/size(weightContainer.weights,2),f,['Calculating weighted dij, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
