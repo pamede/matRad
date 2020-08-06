@@ -1,4 +1,4 @@
-function dij = matRad_calcParticleDose(ct,stf,pln,cst,calcDoseDirect)
+function [dij, CalcCounter] = matRad_calcParticleDose(ct,stf,pln,cst,calcDoseDirect)
 % matRad particle dose calculation wrapper
 % 
 % call
@@ -358,7 +358,7 @@ for i = 1:length(stf) % loop over all beams
                     % run over components
                     for c = 1:numOfSub
                         tmpDose = zeros(size(currIx,1),1);
-                        tic
+%                         tic
                         bixelDose = finalWeight(c,k).*matRad_calcParticleDoseBixel(...
                                 radDepths(currIx(:,:,c),1,c), ...
                                 currRadialDist_sq(currIx(:,:,c),:,c), ...
@@ -368,12 +368,12 @@ for i = 1:length(stf) % loop over all beams
                                                         
                         tmpDose(currIx(:,:,c)) = bixelDose;
                         totalDose = totalDose + tmpDose;                       
-                        bixeltime = toc
+%                         bixeltime = toc
 
                     end
-                    tic
+%                     tic
                     doseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,1} = sparse(VdoseGrid(ix),1,totalDose,dij.doseGrid.numOfVoxels,1);
-                    contTime = toc
+%                     contTime = toc
                 elseif strcmp(anaMode, 'both')
                     % initialise empty dose array
                     totalDose = zeros(size(currIx,1),1);
@@ -454,7 +454,6 @@ for i = 1:length(stf) % loop over all beams
         end
         
     end
-    CalcCounter
 end
 
 try
