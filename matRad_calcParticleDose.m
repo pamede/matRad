@@ -1,4 +1,4 @@
-function [dij, counter] = matRad_calcParticleDose(ct,stf,pln,cst)
+function [dij, counter] = matRad_calcParticleDose(ct,stf,pln,cst,gridsize)
 % matRad particle dose calculation wrapper
 % 
 % call
@@ -158,7 +158,7 @@ for i = 1:length(stf) % loop over all beams
     f = waitbar(0,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     
     % create fine sampling grid
-    gridsize = [1.25, 1.25];
+%     gridsize = [1.25, 1.25];
     [gridX, gridY] = matRad_createFineSamplingGrid(stf(i), gridsize);
     
     % initialise weight container
