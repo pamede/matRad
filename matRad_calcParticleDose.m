@@ -1,4 +1,4 @@
-function [dij, CalcCounter] = matRad_calcParticleDose(ct,stf,pln,cst,calcDoseDirect)
+function [dij, CalcCounter, gridSizes] = matRad_calcParticleDose(ct,stf,pln,cst,calcDoseDirect)
 % matRad particle dose calculation wrapper
 % 
 % call
@@ -154,7 +154,8 @@ for i = 1:length(stf) % loop over all beams
     visBoolLateralCutOff = 0;
     machine = matRad_calcLateralParticleCutOff(machine,cutOffLevel,stf(i),visBoolLateralCutOff);
     matRad_cfg.dispInfo('done.\n');    
-
+    
+    gridSizes = [];
     for j = 1:stf(i).numOfRays % loop over all rays
 
         if ~isempty(stf(i).ray(j).energy)
@@ -189,6 +190,13 @@ for i = 1:length(stf) % loop over all beams
                         error('Problem with chosen sub beam sigma in fine sampling calculation');
                     end
                 end
+                
+                t = unique(posX(:,:),'rows');
+                t = round(t(end,:) - t(end-1,:),2);
+                gridSizes = [gridSizes, t];
+%                 display(t)
+%                 display(000)
+%                 test = [test, t]
                 
             elseif strcmp(anaMode, 'stdCorr')
                 % Ray tracing for beam i and ray j
@@ -455,7 +463,6 @@ for i = 1:length(stf) % loop over all beams
         
     end
 end
-
 try
   % wait 0.1s for closing all waitbars
   allWaitBarFigures = findall(0,'type','figure','tag','TMWWaitbar'); 
