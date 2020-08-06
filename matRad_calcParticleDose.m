@@ -1,4 +1,4 @@
-function dij = matRad_calcParticleDose(ct,stf,pln,cst)
+function [dij, counter] = matRad_calcParticleDose(ct,stf,pln,cst)
 % matRad particle dose calculation wrapper
 % 
 % call
@@ -158,7 +158,7 @@ for i = 1:length(stf) % loop over all beams
     f = waitbar(0,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     
     % create fine sampling grid
-    gridsize = [2, 2];
+    gridsize = [1.25, 1.25];
     [gridX, gridY] = matRad_createFineSamplingGrid(stf(i), gridsize);
     
     % initialise weight container
@@ -168,7 +168,6 @@ for i = 1:length(stf) % loop over all beams
     weightContainer.rayNum = [];
     weightContainer.beamNum = [];
     
-    counter = 1;
     for j = 1:stf(i).numOfRays % loop over all rays
         
         waitbar(j/stf(i).numOfRays,f,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
@@ -198,7 +197,7 @@ for i = 1:length(stf) % loop over all beams
     % throw out all weights that summed up make less than $weightCutOff$ of
     % all weights 
     sortingWeights = [];
-    weightCutOff = 0.05; % cutoff level for weight selection
+    weightCutOff = 0.003; % cutoff level for weight selection
     for a = 1:size(weightContainer.weights, 2)
         
         [tmpW, tmpIx] = sort(weightContainer.weights(:,a));
@@ -317,6 +316,7 @@ for i = 1:length(stf) % loop over all beams
                     currRadialDist_sq(currIx), ...
                     sigmaSub^2, ...
                     machine.data(ixEne));
+            counter = counter + 1;
             
             % fill grid dose container
             [~, xe] = intersect(energies, ixEne);
