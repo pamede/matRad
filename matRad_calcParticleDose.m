@@ -1,4 +1,4 @@
-function dij = matRad_calcParticleDose(ct,stf,pln,cst)
+function [dij, CalcCounter] = matRad_calcParticleDose(ct,stf,pln,cst,gridsize)
 % matRad particle dose calculation wrapper
 % 
 % call
@@ -155,7 +155,7 @@ for i = 1:length(stf) % loop over all beams
     f = waitbar(0,['Calculating weights, beam ' num2str(i) ' of ' num2str(length(stf)) '...']);
     
     weightedGrid.energy = [];
-    gridsize = [2, 2];
+%     gridsize = [2, 2];
     [gridX, gridY] = matRad_createFineSamplingGrid(stf(i), gridsize);
 
     counter = 1;
@@ -319,7 +319,7 @@ for i = 1:length(stf) % loop over all beams
         gridIx = [];
 %         tic
         for ixBixel = 1:size(weightedGrid(ixEne).weights,2)
-            cutOff = 0.05;
+            cutOff = 0.003;
     %         bixelFactor = 1+cutOff/(1-cutOff);
             [weights, ixRe] = sort(weightedGrid(ixEne).weights(:,ixBixel));
             cumWeights = cumsum(weights);
