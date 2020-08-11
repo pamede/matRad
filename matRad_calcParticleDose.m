@@ -286,6 +286,11 @@ for i = 1:length(stf) % loop over all beams
                                     stf(i).ray(j).targetPoint_bev, stf(i).isoCenter,...
                                     [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
                                     -posX(:,k), -posZ(:,k), rotMat_system_T);
+                                
+                     % throw out Coordinates that would result in NaN values in radDepths                        
+                    projCoords(projCoords(:,1) <= dij.doseGrid.resolution.x,1) = dij.doseGrid.resolution.x + 0.0001;
+                    projCoords(projCoords(:,2) <= dij.doseGrid.resolution.y,2) = dij.doseGrid.resolution.y + 0.0001;
+                    projCoords(projCoords(:,3) <= dij.doseGrid.resolution.z,3) = dij.doseGrid.resolution.z + 0.0001;
 
                     % interpolate radiological depths at projected
                     % coordinates
