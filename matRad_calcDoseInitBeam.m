@@ -145,7 +145,8 @@ if strcmp(anaMode, 'stdCorr')
         if isnan(dist)
             sigma = 0;
         else
-            sigma = 1.2 * (1 + 0.5 * (lastC - secondToLastC));
+%             sigma = 1.2 * (1 + 0.5 * (lastC - secondToLastC));
+            sigma = parameterA(1) * (1 + parameterA(2) * (lastC - secondToLastC));
         end
         
         save = [save, sigma];
@@ -174,7 +175,7 @@ if strcmp(anaMode, 'stdCorr')
 
     cStdCtGridMat{1} = matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z, cStdCtGrid, ...
                                 dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest');
-    imagesc(cStdCtGridMat{1}(:,:,25));
+%     imagesc(cStdCtGridMat{1}(:,:,25));
     
     meanRadDepths = {meanRadDepths(VctGrid)};
     cStdCtGrid = {cStdCtGrid(VctGrid)};

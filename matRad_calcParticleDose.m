@@ -1,4 +1,4 @@
-function [dij, CalcCounter, gridSizes] = matRad_calcParticleDose(ct,stf,pln,cst,calcDoseDirect)
+function [dij, CalcCounter, gridSizes] = matRad_calcParticleDose(ct,stf,pln,cst,calcDoseDirect,parameterA)
 % matRad particle dose calculation wrapper
 % 
 % call
