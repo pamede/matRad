@@ -175,7 +175,9 @@ if strcmp(anaMode, 'stdCorr')
 
     cStdCtGridMat{1} = matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z, cStdCtGrid, ...
                                 dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest');
-%     imagesc(cStdCtGridMat{1}(:,:,25));
+                            
+	assignin('base', 'meanRadDepths' ,meanRadDepths);
+    assignin('base', 'cStdCtGrid' ,cStdCtGrid);
     
     meanRadDepths = {meanRadDepths(VctGrid)};
     cStdCtGrid = {cStdCtGrid(VctGrid)};

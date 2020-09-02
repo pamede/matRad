@@ -33,7 +33,7 @@ if ~exist('defaultFontSize','var') || isempty(defaultFontSize)
 end
 
 if ~exist('tickdist','var') || isempty(tickdist)
-    tickdist = 50;
+    tickdist = 100;
 end
 %% Set axis labels and plot iso center
 if  plane == 3% Axial plane
