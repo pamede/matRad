@@ -92,7 +92,98 @@ classdef MatRad_MCsquareBaseData < MatRad_MCemittanceBaseData
             catch MException
                 error(MException.message);
             end
-        end        
+        end 
+        
+        function obj = writeMCsquareDataE(obj,filepath, optMode, optParameters)
+            %function that writes a data file containing Monte Carlo base
+            %data for a simulation with MCsquare
+            
+            if strcmp(optMode, 'energy')
+                obj.monteCarloData(1).MeanEnergy =  optParameters(1);
+                obj.monteCarloData(1).EnergySpread = optParameters(2);
+            elseif  strcmp(optMode, 'all')
+                obj.monteCarloData(1).MeanEnergy =  optParameters(1);
+                obj.monteCarloData(1).EnergySpread = optParameters(2);
+                obj.monteCarloData(1).SpotSize1x =  optParameters(3);
+                obj.monteCarloData(1).SpotSize1y = optParameters(3);
+                obj.monteCarloData(1).Divergence1x =  optParameters(4);
+                obj.monteCarloData(1).Divergence1y = optParameters(4);
+                obj.monteCarloData(1).Correlation1x =  optParameters(5);
+                obj.monteCarloData(1).Correlation1y = optParameters(5);
+            else
+                error('Wrong optimization mode!');
+            end
+            
+            %look up focus indices
+            focusIndex = obj.selectedFocus(obj.energyIndex);
+            
+            %save mcData acording to used focus index in selectedData
+            selectedData = [];
+            for i = 1:numel(focusIndex)
+                selectedData = [selectedData, obj.monteCarloData(focusIndex(i), i)];
+            end
+            
+            %remove field not needed for MCsquare base data
+            selectedData = rmfield(selectedData, 'FWHMatIso');
+            
+            %write MCsqaure data base file
+            try
+                
+                fileID = fopen(filepath,'w');
+                
+                %Header
+                %fprintf(fileID,'--matRad: Beam Model for machine %s (%s)--\n',machine.meta.machine,machine.meta.dataType);
+                fprintf(fileID,'--UPenn beam model (double gaussian)--\n');
+                fprintf(fileID,'# %s\n', obj.machine.meta.description);
+                fprintf(fileID,'# created by %s on %s\n\n', obj.machine.meta.created_by, obj.machine.meta.created_on);
+                
+                fprintf(fileID,'Nozzle exit to Isocenter distance\n');
+                fprintf(fileID,'%.1f\n\n',obj.nozzleToIso);
+                
+                fprintf(fileID,'SMX to Isocenter distance\n');
+                fprintf(fileID,'%.1f\n\n',obj.smx);
+                
+                fprintf(fileID,'SMY to Isocenter distance\n');
+                fprintf(fileID,'%.1f\n\n',obj.smy);
+                
+                for i = 1:length(obj.rangeShifters)
+                    raShi = obj.rangeShifters(i);
+                    fprintf(fileID,'Range Shifter parameters\n');
+                    fprintf(fileID,'RS_ID = %d\n',raShi.ID);
+                    fprintf(fileID,'RS_type = binary\n');
+                    fprintf(fileID,'RS_material = 64\n'); %Material ID Hardcoded for now (PMMA)
+                    fprintf(fileID,'RS_density = 1.19\n'); %Maetiral density Hardcoded for now (PMMA)
+                    fprintf(fileID,'RS_WET = %f\n\n',raShi.eqThickness);
+                end
+                    
+                
+                fprintf(fileID,'Beam parameters\n%d energies\n\n',size(selectedData,2));
+                
+                fn = fieldnames(selectedData);
+                for names = 1:size(fn,1)
+                    fprintf(fileID, fn{names});
+                    fprintf(fileID, '\t');
+                end
+                fprintf(fileID, '\n');
+                
+                for k = 1:size(selectedData,2)
+                    for m = 1:numel(fn)
+                        fprintf(fileID, '%g', selectedData(k).(fn{m}));
+                        fprintf(fileID, '\t');
+                    end
+                    fprintf(fileID, '\n');
+                end
+                
+                fclose(fileID);
+                
+                obj.bdl_path = filepath;
+                
+            catch MException
+                error(MException.message);
+            end
+        end
+        
+        
     end    
 end
 

@@ -1,4 +1,4 @@
-function dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,nCasePerBixel,calcDoseDirect)
+function dij = matRad_calcParticleDoseMCsquareVarE(optMode, optParameters,ct,stf,pln,cst,nCasePerBixel,calcDoseDirect)
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % matRad MCsquare Monte Carlo proton dose calculation wrapper
 %
@@ -38,10 +38,6 @@ function dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,nCasePerBixel,calc
 
 matRad_cfg = MatRad_Config.instance();
 
-% initialize waitbar
-figureWait = waitbar(0,'calculate dose influence matrix with MCsquare...');
-% prevent closure of waitbar and show busy state
-set(figureWait,'pointer','watch');
 
 % check if valid machine
 if ~strcmp(pln.radiationMode,'protons')
@@ -192,9 +188,9 @@ bdFile = [machine.meta.machine '.txt'];
 MCsquareBDL = MatRad_MCsquareBaseData(machine,stf);
 %matRad_createMCsquareBaseDataFile(bdFile,machine,1);
 % MCsquareBDL = MCsquareBDL.saveMatradMachine('test');
-MCsquareBDL = MCsquareBDL.writeMCsquareData([MCsquareFolder filesep 'BDL' filesep bdFile]);
+MCsquareBDL = MCsquareBDL.writeMCsquareDataE([MCsquareFolder filesep 'BDL' filesep bdFile], optMode, optParameters);
 %movefile(bdFile,[MCsquareFolder filesep 'BDL/' bdFile]);
-MCsquareBDL = MCsquareBDL.saveMatradMachine('temporaryMachine');
+% MCsquareBDL = MCsquareBDL.saveMatradMachine('temporaryMachine');
 
 MCsquareConfig.BDL_Machine_Parameter_File = ['BDL/' bdFile];
 MCsquareConfig.BDL_Plan_File = 'currBixels.txt';
@@ -426,9 +422,7 @@ end
 % cd back
 cd(currFolder);
 
-if ishandle(figureWait)
-    delete(figureWait);
-end
+
 
 
 end
