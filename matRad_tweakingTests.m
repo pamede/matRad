@@ -6,7 +6,7 @@ load WATERPHANTOM_res3.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
-pln.machine         = 'Generic';
+pln.machine         = 'HITfixedBL';
 
 pln.numOfFractions  = 30;
 
@@ -31,11 +31,11 @@ pln.propOpt.bioOptimization = 'none'; % none: physical optimization;            
 pln.propOpt.runDAO          = false;  % 1/true: run DAO, 0/false: don't / will be ignored for particles
 pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't / will be ignored for particles and also triggered by runDAO below
 
-ixEnergy = 45;
+ixEnergy = 250;
 
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
-load protons_Generic.mat
+load protons_HITfixedBL.mat
 stf.ray.energy = machine.data(ixEnergy).energy;
 
 %% dose calculation
@@ -68,7 +68,7 @@ stf.ray.energy = machine.data(ixEnergy).energy;
     
     objectiveFunctionEnergy = @(mean, spread) matRad_calcMCsquareObjectiveEnergy(ct, stf, pln, ...
                         cst, N, anaDose, mean, spread, tmpFig);
-    optionsEnergy = optimset('Display','iter', 'TolFun', 0.01, 'TolX', 0.005, 'PlotFcns',@optimplotfval);
+    optionsEnergy = optimset('Display','iter', 'MaxIter', 50 ,'TolFun', 0.01, 'TolX', 0.005, 'PlotFcns',@optimplotfval);
     x = fminsearch(@(x) objectiveFunctionEnergy(x(1), x(2)), [mean, spread], optionsEnergy); 
     
     foundMean = x(1);
@@ -79,7 +79,7 @@ stf.ray.energy = machine.data(ixEnergy).energy;
     N      = 5e5;
     objectiveFunctionOptic = @(spot, div, corr) matRad_calcMCsquareObjectiveOptics(ct, stf, pln, cst, N, anaDose, ...
                                             foundMean, foundSpread, spot, div, corr, tmpFig);
-    optionsOptic = optimset('Display','iter', 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
+    optionsOptic = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
     x = fminsearch(@(x) objectiveFunctionOptic(x(1), x(2), x(3)), [spotsize, divergence, correlation], optionsOptic);
     
     foundSpotsize = 	x(1);
