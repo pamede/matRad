@@ -17,13 +17,15 @@ function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveOptics(ct, stf, pln, c
     mcFWHM = mcFWHM(1:ixValidFWHM);
     smoothMcFWHM = smoothdata(mcFWHM, 'lowess');
     
-    F = 100 * sum((anaFWHM - smoothMcFWHM).^2, 'all') / numel(anaFWHM);
+%     F = 100 * sum((anaFWHM - smoothMcFWHM).^2, 'all') / numel(anaFWHM);
+    F = 100 * sum((anaFWHM - mcFWHM).^4, 'all') / numel(anaFWHM);
+
     
     figure(figureHandle);
     plot(anaFWHM);
     hold on
     plot(mcFWHM);
-    plot(smoothMcFWHM)
+%     plot(smoothMcFWHM)
     hold off
     title(F)
 

@@ -15,7 +15,7 @@ function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst,
     mcFWHM = mcFWHM(1:ixValidFWHM);
     smoothMcFWHM = smoothdata(mcFWHM, 'lowess', 'SmoothingFactor', 0.35);
     
-    F1 = sum((anaFWHM - smoothMcFWHM).^2, 'all') / numel(anaFWHM);
+    F1 = sum((anaFWHM - mcFWHM).^2, 'all') / numel(anaFWHM);
     F2 = 5 * sum((anaIDD - mcIDD).^2, 'all') / numel(anaIDD) * 1e5;
     
     figure(figureHandle);
@@ -23,7 +23,7 @@ function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst,
     plot(anaFWHM);
     hold on
     plot(mcFWHM);
-    plot(smoothMcFWHM)
+%     plot(smoothMcFWHM)
     hold off
     title(F1)
     

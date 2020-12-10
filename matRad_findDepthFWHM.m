@@ -1,6 +1,7 @@
 function FWHM = matRad_findDepthFWHM(ct, dose, IDD)
 
-dose = sum(dose, 3);
+% dose = sum(dose, 3);
+dose = dose(:,:,floor(ct.cubeDim(3)/2));
 zero = find(IDD < max(IDD)/25);
 for i = 1:size(dose, 1)
    if any(zero == i)
@@ -26,9 +27,13 @@ for i = 1:size(dose, 1)
         right   = profileScale(maxi+1:end);
         rightx  = laterDist(maxi+1:end);
 
+    try
         sp1 = interp1(left,   leftx,  0.5);
         sp2 = interp1(right,  rightx, 0.5);
         FWHM(i) = sp2-sp1;
+    catch
+        FWHM(i) = 0;
+    end
 %         
 %         tmpProfile = tmpProfile - 0.5 * maxV; 
 % 

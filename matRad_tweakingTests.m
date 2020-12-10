@@ -23,6 +23,7 @@ pln.propStf.isoCenter(2)    = 0;
 pln.propDoseCalc.doseGrid.resolution.x = 3; % [mm]
 pln.propDoseCalc.doseGrid.resolution.y = 3; % [mm]
 pln.propDoseCalc.doseGrid.resolution.z = 3; % [mm]
+pln.propDoseCalc.lateralCutOff = 0.999999;
 
 % optimization settings
 pln.propOpt.optimizer       = 'IPOPT';
@@ -31,7 +32,7 @@ pln.propOpt.bioOptimization = 'none'; % none: physical optimization;            
 pln.propOpt.runDAO          = false;  % 1/true: run DAO, 0/false: don't / will be ignored for particles
 pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't / will be ignored for particles and also triggered by runDAO below
 
-ixEnergy = 250;
+ixEnergy = 155;
 
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
@@ -70,6 +71,9 @@ stf.ray.energy = machine.data(ixEnergy).energy;
                         cst, N, anaDose, mean, spread, tmpFig);
     optionsEnergy = optimset('Display','iter', 'MaxIter', 50 ,'TolFun', 0.01, 'TolX', 0.005, 'PlotFcns',@optimplotfval);
     x = fminsearch(@(x) objectiveFunctionEnergy(x(1), x(2)), [mean, spread], optionsEnergy); 
+
+%     optionsEnergy = optimset('Display','iter','TolFun', 0.0001, 'PlotFcns',@optimplotfval);    
+%     x = fmincon(@(x) objectiveFunctionEnergy(x(1), x(2)), [mean, spread], [],[],[],[], [0, 0],[],[], optionsEnergy);
     
     foundMean = x(1);
     foundSpread = x(2);
@@ -81,7 +85,9 @@ stf.ray.energy = machine.data(ixEnergy).energy;
                                             foundMean, foundSpread, spot, div, corr, tmpFig);
     optionsOptic = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
     x = fminsearch(@(x) objectiveFunctionOptic(x(1), x(2), x(3)), [spotsize, divergence, correlation], optionsOptic);
-    
+%     optionsOptic = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.003, 'PlotFcns',@optimplotfval);
+%     x = fmincon(@(x) objectiveFunctionOptic(x(1), x(2), x(3)), [spotsize, divergence, correlation], [],[],[],[], [0, -0.99, -10],[10,0.99,10],[], optionsOptic);
+
     foundSpotsize = 	x(1);
     foundDivergence = 	x(2);
     foundCorrelation = 	x(3);
