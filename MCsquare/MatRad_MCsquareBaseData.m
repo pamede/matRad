@@ -105,11 +105,22 @@ classdef MatRad_MCsquareBaseData < MatRad_MCemittanceBaseData
                 obj.monteCarloData(1).MeanEnergy =  optParameters(1);
                 obj.monteCarloData(1).EnergySpread = optParameters(2);
                 obj.monteCarloData(1).SpotSize1x =  optParameters(3);
-                obj.monteCarloData(1).SpotSize1y = optParameters(3);
+                obj.monteCarloData(1).SpotSize1y = optParameters(6);
+%                 if (optParameters(4) <= 0) && (optParameters(4) > -1e-20)
+%                     optParameters(4) = -1e-20;
+%                 elseif (optParameters(4) > 0) && (optParameters(4) > 1e-20)
+%                     optParameters(4) = +1e-20;
+%                 end   
+%                 if optParameters(7) <= 0 && optParameters(7) > -1e-20
+%                     optParameters(7) = -1e-20;
+%                 elseif optParameters(7) > 0 && optParameters(7) > 1e-20
+%                     optParameters(7) = +1e-20;
+%                 end   
                 obj.monteCarloData(1).Divergence1x =  optParameters(4);
-                obj.monteCarloData(1).Divergence1y = optParameters(4);
+                obj.monteCarloData(1).Divergence1y = optParameters(7);
                 obj.monteCarloData(1).Correlation1x =  optParameters(5);
-                obj.monteCarloData(1).Correlation1y = optParameters(5);
+                obj.monteCarloData(1).Correlation1y = optParameters(8);
+                
             else
                 error('Wrong optimization mode!');
             end

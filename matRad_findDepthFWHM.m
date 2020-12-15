@@ -1,7 +1,14 @@
-function FWHM = matRad_findDepthFWHM(ct, dose, IDD)
+function FWHM = matRad_findDepthFWHM(ct, dose, IDD, mode)
 
 % dose = sum(dose, 3);
-dose = dose(:,:,floor(ct.cubeDim(3)/2));
+if mode == 1
+    dose = dose(:,:,floor(ct.cubeDim(3)/2));
+elseif mode == 2
+    dose = reshape(dose(:,floor(ct.cubeDim(3)/2),:),ct.cubeDim(1),ct.cubeDim(2));
+else
+    error('fullKEK');
+end
+
 zero = find(IDD < max(IDD)/25);
 for i = 1:size(dose, 1)
    if any(zero == i)
@@ -28,8 +35,8 @@ for i = 1:size(dose, 1)
         rightx  = laterDist(maxi+1:end);
 
     try
-        sp1 = interp1(left,   leftx,  0.5);
-        sp2 = interp1(right,  rightx, 0.5);
+        sp1 = interp1(left,   leftx,  0.5, 'linear', 'extrap');
+        sp2 = interp1(right,  rightx, 0.5, 'linear', 'extrap');
         FWHM(i) = sp2-sp1;
     catch
         FWHM(i) = 0;

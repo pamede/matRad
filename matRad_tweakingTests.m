@@ -32,7 +32,7 @@ pln.propOpt.bioOptimization = 'none'; % none: physical optimization;            
 pln.propOpt.runDAO          = false;  % 1/true: run DAO, 0/false: don't / will be ignored for particles
 pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't / will be ignored for particles and also triggered by runDAO below
 
-ixEnergy = 155;
+ixEnergy = 144;
 
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
@@ -63,13 +63,11 @@ stf.ray.energy = machine.data(ixEnergy).energy;
 
     tmpFig = figure;
 	set(gcf,'Position',[100 400 1500 500])
-    
-%     testFcn = @(a,b,c) display('Hallo');
-%     'OutputFcn', testFcn
+
     
     objectiveFunctionEnergy = @(mean, spread) matRad_calcMCsquareObjectiveEnergy(ct, stf, pln, ...
                         cst, N, anaDose, mean, spread, tmpFig);
-    optionsEnergy = optimset('Display','iter', 'MaxIter', 50 ,'TolFun', 0.01, 'TolX', 0.005, 'PlotFcns',@optimplotfval);
+    optionsEnergy = optimset('Display','iter', 'MaxIter', 50 ,'TolFun', 0.001, 'TolX', 0.0005, 'PlotFcns',@optimplotfval);
     x = fminsearch(@(x) objectiveFunctionEnergy(x(1), x(2)), [mean, spread], optionsEnergy); 
 
 %     optionsEnergy = optimset('Display','iter','TolFun', 0.0001, 'PlotFcns',@optimplotfval);    
@@ -80,39 +78,88 @@ stf.ray.energy = machine.data(ixEnergy).energy;
     
 %  optics dependent Monte Carlo calculation
 
-    N      = 5e5;
-    objectiveFunctionOptic = @(spot, div, corr) matRad_calcMCsquareObjectiveOptics(ct, stf, pln, cst, N, anaDose, ...
-                                            foundMean, foundSpread, spot, div, corr, tmpFig);
-    optionsOptic = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
-    x = fminsearch(@(x) objectiveFunctionOptic(x(1), x(2), x(3)), [spotsize, divergence, correlation], optionsOptic);
+%     N      = 5e5;
+%     objectiveFunctionOptic = @(spot, div, corr) matRad_calcMCsquareObjectiveOptics(ct, stf, pln, cst, N, anaDose, ...
+%                                             foundMean, foundSpread, spot, div, corr, tmpFig);
+%     optionsOptic = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
+%     x = fminsearch(@(x) objectiveFunctionOptic(x(1), x(2), x(3)), [spotsize, divergence, correlation], optionsOptic);
+% %     optionsOptic = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.003, 'PlotFcns',@optimplotfval);
+% %     x = fmincon(@(x) objectiveFunctionOptic(x(1), x(2), x(3)), [spotsize, divergence, correlation], [],[],[],[], [0, -0.99, -10],[10,0.99,10],[], optionsOptic);
+% 
+%     foundSpotsize = 	x(1);
+%     foundDivergence = 	x(2);
+%     foundCorrelation = 	x(3);
+%     
+%     N = 5e5;
+%     tmpFig1 = figure;
+% 
+%     objectiveFunctionDivergence = @(divX, divY) matRad_calcMCsquareDivergenceXY(ct, stf, pln, cst, N, anaDose, ...
+%                               foundMean, foundSpread, spotsize, divX, correlation, spotsize, divY, correlation, tmpFig1);
+%     optionsDivergence = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.00003, 'TolX', 0.0001, 'PlotFcns',@optimplotfval);
+%     x = fminsearch(@(x) objectiveFunctionDivergence(x(1), x(2)), [divergence, divergence], optionsDivergence);
+% 
+%     foundDivergenceX = 	x(1);
+%     foundDivergenceY = 	x(2);
+    
+%     tmpFig1 = figure;
+%     matRad_calcMCsquareDivergenceXY(ct, stf, pln, cst, 1e6, anaDose, ...
+%                                             foundMean, foundSpread, spotsize, 0, correlation, spotsize, 0, correlation, tmpFig1)
+%     
+%     tmpFig1 = figure;
+%     matRad_calcMCsquareObjectiveOpticsXY(ct, stf, pln, ...
+%                                 cst, 1e6, anaDose,foundMean, foundSpread, 5, 0, correlation, 5, 0, correlation, tmpFig1)                                    
+%                                         
+    
+    N      = 1e6;
+    objectiveFunctionOptic = @(spotX, divX, corrX, spotY, divY, corrY) matRad_calcMCsquareObjectiveOpticsXY(ct, stf, pln, cst, N, anaDose, ...
+                                            foundMean, foundSpread, spotX, divX, corrX, spotY, divY, corrY, tmpFig);
+    optionsOptic = optimset('Display','iter', 'MaxIter', 150 , 'TolFun', 0.0003, 'TolX', 0.0001, 'PlotFcns',@optimplotfval);
+    x = fminsearch(@(x) objectiveFunctionOptic(x(1), x(2), x(3), x(4), x(5), x(6)), [spotsize, divergence, correlation, spotsize, divergence, correlation], optionsOptic);
 %     optionsOptic = optimset('Display','iter', 'MaxIter', 50 , 'TolFun', 0.003, 'PlotFcns',@optimplotfval);
 %     x = fmincon(@(x) objectiveFunctionOptic(x(1), x(2), x(3)), [spotsize, divergence, correlation], [],[],[],[], [0, -0.99, -10],[10,0.99,10],[], optionsOptic);
 
-    foundSpotsize = 	x(1);
-    foundDivergence = 	x(2);
-    foundCorrelation = 	x(3);
+%     foundSpotsize = 	x(1);
+%     foundDivergence = 	x(2);
+%     foundCorrelation = 	x(3);
+    
+    foundSpotsizeX = 	x(1);
+    foundDivergenceX = 	x(2);
+    foundCorrelationX = x(3);
+    foundSpotsizeY = 	x(4);
+    foundDivergenceY = 	x(5);
+    foundCorrelationY =	x(6);
 
     
     
 
  % all parameter dependent Monte Carlo calculation
-    objectiveFunctionAll = @(mean, spread, spot, div, corr) matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst, ...
-                                        5e6, anaDose, mean, spread, spot, div, corr, tmpFig);
-    optionsAll = optimset('Display','iter', 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
-    x = fminsearch(@(x) objectiveFunctionAll(x(1), x(2), x(3), x(4), x(5)), [foundMean, foundSpread, foundSpotsize, foundDivergence, foundCorrelation], optionsAll);
+%     objectiveFunctionAll = @(mean, spread, spot, div, corr) matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst, ...
+%                                         5e6, anaDose, mean, spread, spot, div, corr, tmpFig);
+%     optionsAll = optimset('Display','iter', 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
+%     x = fminsearch(@(x) objectiveFunctionAll(x(1), x(2), x(3), x(4), x(5)), [foundMean, foundSpread, foundSpotsize, foundDivergence, foundCorrelation], optionsAll);
  
-    finalMean   = x(1);
-    finalSpread = x(2);
-    finalSpot   = x(3);
-    finalDiv    = x(4);
-    finalCorr   = x(5);
+    objectiveFunctionAll = @(mean, spread, spotX, divX, corrX, spotY, divY, corrY) matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, ...
+                                cst, 5e6, anaDose, mean, spread, spotX, divX, corrX, spotY, divY, corrY, tmpFig);
+    optionsAll = optimset('Display','iter', 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
+    x = fminsearch(@(x) objectiveFunctionAll(x(1), x(2), x(3), x(4), x(5), x(6), x(7), x(8)), [foundMean, foundSpread, foundSpotsizeX, ...
+                            foundDivergenceX ,foundCorrelationX, foundSpotsizeY, foundDivergenceY, foundCorrelationY], optionsAll);
+ 
+    finalMean   =       x(1);
+    finalSpread =       x(2);
+    finalSpotsizeX = 	x(3);
+    finalDivergenceX = 	x(4);
+    finalCorrelationX = x(5);
+    finalSpotsizeY = 	x(6);
+    finalDivergenceY = 	x(7);
+    finalCorrelationY =	x(8);
     
     
  %%
  
     resultFig = figure;
-    [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst, 1e6, anaDose, ...
-                    finalMean, finalSpread, finalSpot, finalDiv, finalCorr, resultFig);
-
+%     [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst, 1e6, anaDose, ...
+%                     finalMean, finalSpread, finalSpot, finalDiv, finalCorr, resultFig);
+    matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cst, 1e6, anaDose, finalMean, finalSpread, ...
+        finalSpotsizeX, finalDivergenceX ,finalCorrelationX, finalSpotsizeY, finalDivergenceY, finalCorrelationY, resultFig);
     
     
