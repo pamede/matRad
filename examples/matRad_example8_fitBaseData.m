@@ -96,7 +96,7 @@ clearvars -except ct cst
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     % either photons / protons / carbon
-pln.machine         = 'matRadBDLold';
+pln.machine         = 'generic_MCsquare';
 
 pln.numOfFractions  = 30;
  

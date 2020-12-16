@@ -88,7 +88,7 @@ for i = 1:size(resSigma1,1)
                              
                                      
     options1.lb =   0;
-    options1.ub = Inf;
+    options1.ub =  30;
     options1.ipopt.hessian_approximation = 'limited-memory';
     options1.ipopt.limited_memory_update_type = 'bfgs';
     options1.ipopt.print_level = 1;

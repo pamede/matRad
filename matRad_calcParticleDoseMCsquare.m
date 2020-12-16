@@ -1,4 +1,4 @@
-function dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,nCasePerBixel,calcDoseDirect)
+function dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,nCasePerBixel,calcDoseDirect,baseDataFile)
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % matRad MCsquare Monte Carlo proton dose calculation wrapper
 %
@@ -63,6 +63,12 @@ end
 
 if nargin < 6
     calcDoseDirect = false;
+end
+
+if nargin < 7
+    givenBaseDataFile = false;
+else
+    givenBaseDataFile = true;
 end
 
 if isfield(pln,'propMC') && isfield(pln.propMC,'outputVariance')
@@ -186,15 +192,19 @@ MCsquareConfigFile = 'MCsquareConfig.txt';
 
 MCsquareConfig = MatRad_MCsquareConfig;
 
-bdFile = [machine.meta.machine '.txt'];
+if (givenBaseDataFile == true)
+    bdFile = baseDataFile;
+else
+    bdFile = [machine.meta.machine '.txt'];
 
-% bdFile = 'BDL_matRad.txt'; %use for baseData fit 
-MCsquareBDL = MatRad_MCsquareBaseData(machine, stf);
-%matRad_createMCsquareBaseDataFile(bdFile,machine,1);
-% MCsquareBDL = MCsquareBDL.saveMatradMachine('test');
-MCsquareBDL = MCsquareBDL.writeMCsquareData([MCsquareFolder filesep 'BDL' filesep bdFile]);
-%movefile(bdFile,[MCsquareFolder filesep 'BDL/' bdFile]);
-% MCsquareBDL = MCsquareBDL.saveMatradMachine('savedMatRadMachine');
+    % bdFile = 'BDL_matRad.txt'; %use for baseData fit 
+    MCsquareBDL = MatRad_MCsquareBaseData(machine);
+    %matRad_createMCsquareBaseDataFile(bdFile,machine,1);
+    % MCsquareBDL = MCsquareBDL.saveMatradMachine('test');
+    MCsquareBDL = MCsquareBDL.writeMCsquareData([MCsquareFolder filesep 'BDL' filesep bdFile]);
+    %movefile(bdFile,[MCsquareFolder filesep 'BDL/' bdFile]);
+    MCsquareBDL = MCsquareBDL.saveMatradMachine('savedMatRadMachine');
+end
 
 MCsquareConfig.BDL_Machine_Parameter_File = ['BDL/' bdFile];
 MCsquareConfig.BDL_Plan_File = 'currBixels.txt';

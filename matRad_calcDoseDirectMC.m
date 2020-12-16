@@ -1,4 +1,4 @@
-function resultGUI = matRad_calcDoseDirectMC(ct,stf,pln,cst,w,nHistories)
+function resultGUI = matRad_calcDoseDirectMC(ct,stf,pln,cst,w,nHistories,baseDataFile)
 % matRad dose calculation wrapper bypassing dij calculation for MC dose
 % calculation algorithms
 % 
@@ -43,6 +43,12 @@ if nargin < 6 || ~exist('nHistories')
   matRad_cfg.dispInfo('Using default number of Histories: %d\n',nHistories);
 end
 
+if nargin < 7
+    givenBaseDataFile = false;
+else
+    givenBaseDataFile = true;
+end
+
 % check if weight vector is available, either in function call or in stf - otherwise dose calculation not possible
 if ~exist('w','var') && ~isfield([stf.ray],'weight')
      matRad_cfg.dispError('No weight vector available. Please provide w or add info to stf');
@@ -85,7 +91,11 @@ if strcmp(pln.radiationMode,'protons')
     
     switch pln.propMC.proton_engine
         case 'MCsquare'
-        dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,nHistories,calcDoseDirect);
+            if givenBaseDataFile == true
+                dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,nHistories,calcDoseDirect,baseDataFile);
+            else
+                dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,nHistories,calcDoseDirect);
+            end
         case 'TOPAS'
         dij = matRad_calcParticleDoseMCtopas(ct,stf,pln,cst,nHistories,calcDoseDirect);
     end
