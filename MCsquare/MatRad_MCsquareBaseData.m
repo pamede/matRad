@@ -120,6 +120,8 @@ classdef MatRad_MCsquareBaseData < MatRad_MCemittanceBaseData
                 obj.monteCarloData(1).Divergence1y = optParameters(7);
                 obj.monteCarloData(1).Correlation1x =  optParameters(5);
                 obj.monteCarloData(1).Correlation1y = optParameters(8);
+                obj.smx = optParameters(9);
+                obj.smy = optParameters(10);
                 
             else
                 error('Wrong optimization mode!');

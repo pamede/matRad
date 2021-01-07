@@ -1,5 +1,5 @@
 function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveOpticsXY(ct, stf, pln, cst, N, anaDose, ...
-                                            mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY, figureHandle)
+                                            mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY, focalX, focalY, figureHandle)
     
                                         
                                             
@@ -12,7 +12,7 @@ function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveOpticsXY(ct, stf, pln,
     anaFWHM2 = anaFWHM2(1:ixValidFWHM);
     
     optMode = 'all';
-    resultGUI = matRad_calcDoseDirectMCvarE(optMode, [mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY], ...
+    resultGUI = matRad_calcDoseDirectMCvarE(optMode, [mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY, focalX, focalY], ...
                                     ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), N);
     mcDose = resultGUI.physicalDose;
     mcIDD = sum(resultGUI.physicalDose,[2 3]); 
@@ -25,8 +25,8 @@ function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveOpticsXY(ct, stf, pln,
 %     smoothMcFWHM = smoothdata(mcFWHM, 'lowess');
     
 %     F = 100 * sum((anaFWHM - smoothMcFWHM).^2, 'all') / numel(anaFWHM);
-    F1 = 100 * sum((anaFWHM1 - mcFWHM1).^4, 'all') / numel(anaFWHM1);
-    F2 = 100 * sum((anaFWHM2 - mcFWHM2).^4, 'all') / numel(anaFWHM2);
+    F1 = 100 * sum((anaFWHM1 - mcFWHM1).^2, 'all') / numel(anaFWHM1);
+    F2 = 100 * sum((anaFWHM2 - mcFWHM2).^2, 'all') / numel(anaFWHM2);
 
     F = F1 + F2;
     

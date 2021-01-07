@@ -1,5 +1,5 @@
 function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cst, N, anaDose, ...
-                                            mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY, figureHandle)
+                                            mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY, foundFocalX, foundFocalY, figureHandle)
     
  
     anaIDD = sum(anaDose,[2 3]);
@@ -11,7 +11,7 @@ function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cs
     anaFWHM2 = anaFWHM2(1:ixValidFWHM);
     
     optMode = 'all';
-    resultGUI = matRad_calcDoseDirectMCvarE(optMode, [mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY], ...
+    resultGUI = matRad_calcDoseDirectMCvarE(optMode, [mean, spread, spotsizeX, divergenceX, correlationX, spotsizeY, divergenceY, correlationY, foundFocalX, foundFocalY], ...
                                     ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), N);
     mcDose = resultGUI.physicalDose;
     mcIDD = sum(resultGUI.physicalDose,[2 3]); 
@@ -22,8 +22,8 @@ function [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cs
     mcFWHM2 = mcFWHM2(1:ixValidFWHM);
     
     
-    F11 = 100 * sum((anaFWHM1 - mcFWHM1).^4, 'all') / numel(anaFWHM1);
-    F12 = 100 * sum((anaFWHM2 - mcFWHM2).^4, 'all') / numel(anaFWHM2);
+    F11 = 100 * sum((anaFWHM1 - mcFWHM1).^2, 'all') / numel(anaFWHM1);
+    F12 = 100 * sum((anaFWHM2 - mcFWHM2).^2, 'all') / numel(anaFWHM2);
 
     F1 = F11 + F12;
     
