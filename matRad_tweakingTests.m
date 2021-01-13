@@ -6,7 +6,7 @@ load WATERPHANTOM_res3.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     
-pln.machine         = 'HITfixedBL';
+pln.machine         = 'generic_MCsquare';
 
 pln.numOfFractions  = 30;
 
@@ -32,11 +32,12 @@ pln.propOpt.bioOptimization = 'none'; % none: physical optimization;            
 pln.propOpt.runDAO          = false;  % 1/true: run DAO, 0/false: don't / will be ignored for particles
 pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't / will be ignored for particles and also triggered by runDAO below
 
-ixEnergy = 144;
+ixEnergy = 55;
 
 %% generate steering file
 stf = matRad_generateStf(ct,cst,pln);
-load protons_HITfixedBL.mat
+machineName = [pln.radiationMode, '_', pln.machine ];
+load(machineName)
 stf.ray.energy = machine.data(ixEnergy).energy;
 
 %% dose calculation
@@ -47,10 +48,12 @@ stf.ray.energy = machine.data(ixEnergy).energy;
     anaIDD = sum(anaDose,[2 3]);
 
  % initial Monte Carlo dose calculation
-    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e4);
+    resultGUI_MC = matRad_calcDoseDirectMC(ct,stf,pln,cst,ones(sum([stf(:).totalNumOfBixels]),1), 1e6);
     resultGUI.physicalDoseMC = resultGUI_MC.physicalDose;
     mcDose      = resultGUI.physicalDoseMC;
     mcIDD = sum(mcDose,[2 3]);
+    
+    preDoseMC = mcDose;
     
  % energy dependent Monte Carlo calculation 
     load protons_temporaryMachine.mat
@@ -111,7 +114,7 @@ stf.ray.energy = machine.data(ixEnergy).energy;
 %                                         
     
     SAD = machine.meta.SAD;
-    N      = 1e6;
+    N      = 5e5;
     objectiveFunctionOptic = @(spotX, divX, corrX, spotY, divY, corrY, focalX, focalY) matRad_calcMCsquareObjectiveOpticsXY(ct, stf, pln, cst, N, anaDose, ...
                                             foundMean, foundSpread, spotX, divX, corrX, spotY, divY, corrY, focalX, focalY, tmpFig);
     optionsOptic = optimset('Display','iter', 'MaxIter', 100 , 'TolFun', 0.0003, 'TolX', 0.0001, 'PlotFcns',@optimplotfval);
@@ -142,7 +145,7 @@ stf.ray.energy = machine.data(ixEnergy).energy;
 %     x = fminsearch(@(x) objectiveFunctionAll(x(1), x(2), x(3), x(4), x(5)), [foundMean, foundSpread, foundSpotsize, foundDivergence, foundCorrelation], optionsAll);
  
     objectiveFunctionAll = @(mean, spread, spotX, divX, corrX, spotY, divY, corrY, focalX, focalY) matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, ...
-                                cst, 5e6, anaDose, mean, spread, spotX, divX, corrX, spotY, divY, corrY, focalX, focalY, tmpFig);
+                                cst, 1e6, anaDose, mean, spread, spotX, divX, corrX, spotY, divY, corrY, focalX, focalY, tmpFig);
     optionsAll = optimset('Display','iter', 'TolFun', 0.003, 'TolX', 0.01, 'PlotFcns',@optimplotfval);
     x = fminsearch(@(x) objectiveFunctionAll(x(1), x(2), x(3), x(4), x(5), x(6), x(7), x(8), x(9), x(10)), [foundMean, foundSpread, foundSpotsizeX, ...
                             foundDivergenceX ,foundCorrelationX, foundSpotsizeY, foundDivergenceY, foundCorrelationY, foundFocalX, foundFocalY], optionsAll);
@@ -163,7 +166,77 @@ stf.ray.energy = machine.data(ixEnergy).energy;
     resultFig = figure;
 %     [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst, 1e6, anaDose, ...
 %                     finalMean, finalSpread, finalSpot, finalDiv, finalCorr, resultFig);
-    matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cst, 1e6, anaDose, finalMean, finalSpread, ...
+    [~, optMcDose] = matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cst, 1e6, anaDose, finalMean, finalSpread, ...
         finalSpotsizeX, finalDivergenceX ,finalCorrelationX, finalSpotsizeY, finalDivergenceY, finalCorrelationY, finalFocalX, finalFocalY, resultFig);
+   
     
+    %% plotting
+    
+% put ANALYTICAL stuff to plot together
+anaIDD = sum(anaDose, [2,3]);
+anaIDD = anaIDD(anaIDD > 0);
+anaFWHM = matRad_findDepthFWHM(ct, anaDose, anaIDD, 1);
+anaFWHM = anaFWHM(anaFWHM > 0);
+
+% put MCsquare stuff to plot together
+mc1IDD = sum(preDoseMC, [2,3]);
+mc1IDD = mc1IDD(mc1IDD > 0);
+mc1FWHM = matRad_findDepthFWHM(ct, preDoseMC, mc1IDD, 1);
+mc1FWHM = mc1FWHM(mc1FWHM > 0);
+
+% put TOPAS stuff to plot together
+mc2IDD = sum(optMcDose, [2,3]);
+mc2IDD = mc2IDD(mc2IDD > 0);
+mc2FWHM = matRad_findDepthFWHM(ct, optMcDose, mc2IDD, 1);
+mc2FWHM = mc2FWHM(mc2FWHM > 0);
+
+
+blue = [0, 0.4470, 0.7410];
+orange = [0.8500, 0.3250, 0.0980];
+yellow = [0.9290, 0.6940, 0.1250];
+
+maxYidd = max([anaIDD;mc1IDD;mc2IDD]);
+maxYfwhm = max([anaFWHM,mc1FWHM,mc2FWHM]);
+
+%% IDD FWHM plots
+depths = linspace(0,120 * 3,120);
+
+figure
+plot(depths(1:size(anaIDD,1)), anaIDD, 'LineWidth', 1, 'Color', 'k', 'LineStyle', '-')
+hold on
+plot(depths(1:size(mc1IDD,1)), mc1IDD, 'LineWidth', 1, 'Color', 'b',  'LineStyle', '--')
+plot(depths(1:size(mc2IDD,1)), mc2IDD, 'LineWidth', 1.5, 'Color', 'r', 'LineStyle', ':')
+hold off
+
+
+xlabel('Depth [mm]') 
+ylabel('Dose [a.u.]') 
+
+% yyaxis right
+% ylabel('Dose difference [a.u.]') 
+% plot(depths(1:size(anaIDD,1)), mc1IDD(1:size(anaIDD,1))-anaIDD, 'LineWidth', 1, 'LineStyle', '--')
+% hold on
+% plot(depths(1:size(anaIDD,1)), mc2IDD(1:size(anaIDD,1))-anaIDD, 'LineWidth', 1, 'LineStyle', ':')
+% hold off
+
+
+
+legend('off');
+
+%%
+figure
+plot(depths(1:size(anaFWHM,2)), anaFWHM, 'LineWidth', 1, 'Color', 'k', 'LineStyle', '-')
+hold on
+plot(depths(1:size(mc1FWHM,2)),mc1FWHM, 'LineWidth', 1, 'Color', 'b',  'LineStyle', '--')
+plot(depths(1:size(mc2FWHM,2)),mc2FWHM, 'LineWidth', 1.5, 'Color', 'r', 'LineStyle', ':')
+
+
+xlabel('Depth [mm]') 
+ylabel('FWHM [mm]') 
+% axis([0 350 0 maxYfwhm * 1.1])
+hold off
+% pbaspect([1,0.7,1])
+legend('off');
+% set(gcf,'Position',[100 200 650 240])
+% set(gca,'XAxisLocation','bottom','YAxisLocation','right');
     
