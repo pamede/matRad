@@ -134,8 +134,8 @@ stf.ray.energy = machine.data(ixEnergy).energy;
     foundCorrelationY =	x(6);
     foundFocalX = x(7);
     foundFocalY = x(8);
-
     
+       
     
 
  % all parameter dependent Monte Carlo calculation
@@ -166,7 +166,7 @@ stf.ray.energy = machine.data(ixEnergy).energy;
     resultFig = figure;
 %     [F, mcIDD, mcFWHM] = matRad_calcMCsquareObjectiveAll(ct, stf, pln, cst, 1e6, anaDose, ...
 %                     finalMean, finalSpread, finalSpot, finalDiv, finalCorr, resultFig);
-    [~, optMcDose] = matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cst, 1e6, anaDose, finalMean, finalSpread, ...
+    [~, optMcDose] = matRad_calcMCsquareObjectiveAllXY(ct, stf, pln, cst, 1e7, anaDose, finalMean, finalSpread, ...
         finalSpotsizeX, finalDivergenceX ,finalCorrelationX, finalSpotsizeY, finalDivergenceY, finalCorrelationY, finalFocalX, finalFocalY, resultFig);
    
     
@@ -202,12 +202,13 @@ maxYfwhm = max([anaFWHM,mc1FWHM,mc2FWHM]);
 depths = linspace(0,120 * 3,120);
 
 figure
-plot(depths(1:size(anaIDD,1)), anaIDD, 'LineWidth', 1, 'Color', 'k', 'LineStyle', '-')
+plot(depths(1:size(anaIDD,1)), anaIDD, 'LineWidth', 2, 'Color', 'r', 'LineStyle', '-')
 hold on
-plot(depths(1:size(mc1IDD,1)), mc1IDD, 'LineWidth', 1, 'Color', 'b',  'LineStyle', '--')
-plot(depths(1:size(mc2IDD,1)), mc2IDD, 'LineWidth', 1.5, 'Color', 'r', 'LineStyle', ':')
+plot(depths(1:size(mc1IDD,1)), mc1IDD, 'LineWidth', 2, 'Color', 'b',  'LineStyle', '--')
+plot(depths(1:size(mc2IDD,1)), mc2IDD, 'LineWidth', 2, 'Color', 'k', 'LineStyle', '--')
 hold off
 
+legend('analytical','detuned MC','optimized MC','Location','northwest')
 
 xlabel('Depth [mm]') 
 ylabel('Dose [a.u.]') 
@@ -219,16 +220,14 @@ ylabel('Dose [a.u.]')
 % plot(depths(1:size(anaIDD,1)), mc2IDD(1:size(anaIDD,1))-anaIDD, 'LineWidth', 1, 'LineStyle', ':')
 % hold off
 
-
-
-legend('off');
+set(gcf,'Position',[425,457,423,314]);
 
 %%
 figure
-plot(depths(1:size(anaFWHM,2)), anaFWHM, 'LineWidth', 1, 'Color', 'k', 'LineStyle', '-')
+plot(depths(1:size(anaFWHM,2)), anaFWHM, 'LineWidth', 2, 'Color', 'r', 'LineStyle', '-')
 hold on
-plot(depths(1:size(mc1FWHM,2)),mc1FWHM, 'LineWidth', 1, 'Color', 'b',  'LineStyle', '--')
-plot(depths(1:size(mc2FWHM,2)),mc2FWHM, 'LineWidth', 1.5, 'Color', 'r', 'LineStyle', ':')
+plot(depths(1:size(mc1FWHM,2)),mc1FWHM, 'LineWidth', 2, 'Color', 'b',  'LineStyle', '--')
+plot(depths(1:size(mc2FWHM,2)),mc2FWHM, 'LineWidth', 2, 'Color', 'k', 'LineStyle', '--')
 
 
 xlabel('Depth [mm]') 
@@ -237,6 +236,6 @@ ylabel('FWHM [mm]')
 hold off
 % pbaspect([1,0.7,1])
 legend('off');
-% set(gcf,'Position',[100 200 650 240])
+set(gcf,'Position',[425,457,423,314]);
 % set(gca,'XAxisLocation','bottom','YAxisLocation','right');
     

@@ -218,6 +218,11 @@ classdef MatRad_MCemittanceBaseData
             energySpread = (totalSigmaSq - totalSpreadSq(r80)) / (0.022^2 * 1.77^2 * mcDataEnergy.MeanEnergy^(2*1.77-2));
             energySpread(energySpread < 0) = 0;
             mcDataEnergy.EnergySpread = sqrt(energySpread);
+
+            % !!!DETUNE ACTUAL VALUES !!!! NOT CORRECT !!! VISUALIZATION 
+            % PAPER PURPOSE !!!
+            mcDataEnergy.MeanEnergy = mcDataEnergy.MeanEnergy - 10;
+            mcDataEnergy.EnergySpread = mcDataEnergy.EnergySpread + 1;
         end
         
         function mcDataOptics = fitBeamOpticsForEnergy(obj,energyIx, focusIndex)
@@ -270,6 +275,16 @@ classdef MatRad_MCemittanceBaseData
             mcDataOptics.SpotSize1y    = SpotsizeAtNozzle;
             mcDataOptics.Divergence1y  = DivergenceAtNozzle;
             mcDataOptics.Correlation1y = CorrelationAtNozzle;
+            
+            % !!!DETUNE ACTUAL VALUES !!!! NOT CORRECT !!! VISUALIZATION 
+            % PAPER PURPOSE !!!
+            mcDataOptics.SpotSize1x    = mcDataOptics.SpotSize1x + 0.2;
+%             mcDataOptics.Divergence1x  = 0;
+%             mcDataOptics.Correlation1x = 0;
+            mcDataOptics.SpotSize1y    = mcDataOptics.SpotSize1x - 0.2;
+%             mcDataOptics.Divergence1y  = 0;
+%             mcDataOptics.Correlation1y = 0;
+            
             
             visBool = false;
             if visBool
