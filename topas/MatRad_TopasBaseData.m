@@ -41,6 +41,41 @@ classdef MatRad_TopasBaseData < MatRad_MCemittanceBaseData
             obj = obj@MatRad_MCemittanceBaseData(varargin{constArguments});           
         end
         
+        function obj = uncQuant(obj, errorEnergy, errorSigmaXY, div, corr)
+            % alter exisitning TOPAS MC parameterization for uncertainty
+            % Quantification, errorEnergy is relative (0 to 1), 
+            % errorSigmaXY (is added in quadrature)
+            
+            % assign default values to beam divergence and correlation
+            if nargin < 4
+                div = 0;
+                corr = 0;
+            elseif nargin < 5
+                corr = 0;
+            end
+            
+            
+            %  alter entries for energy spread as well as emittance
+            %  parameterizeation according to input parameters
+            for i = 1:size(obj.monteCarloData,2)
+                
+                if errorEnergy < 0 || errorEnergy > 1
+                % check whether energy error is reasonable
+
+                	matRad_cfg.dispError('Selected invalid energy error in uncertainty Quantification!'); 
+                else
+                    obj.monteCarloData(i).EnergySpread = obj.monteCarloData(i).MeanEnergy * errorEnergy;
+                end
+                
+                obj.monteCarloData(i).SpotSize1x    = sqrt(obj.monteCarloData(i).SpotSize1x^2 + errorSigmaXY^2);
+                obj.monteCarloData(i).SpotSize1y    = sqrt(obj.monteCarloData(i).SpotSize1y^2 + errorSigmaXY^2);
+                obj.monteCarloData(i).Divergence1x  = div;
+                obj.monteCarloData(i).Divergence1y  = div;
+                obj.monteCarloData(i).Correlation1x = corr;
+                obj.monteCarloData(i).Correlation1y = corr;
+            end
+        end
+        
         function obj = writeTopasData(obj,ct,stf,pln,w)
             %function that writes a data file containing stf specific data
             %for a Monte Carlo simulation with TOPAS
