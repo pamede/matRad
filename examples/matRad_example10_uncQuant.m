@@ -51,8 +51,14 @@ pln.propOpt.bioOptimization = 'none'; % none: physical optimization;            
 pln.propOpt.runDAO          = false;  % 1/true: run DAO, 0/false: don't / will be ignored for particles
 pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't / will be ignored for particles and also triggered by runDAO below
 
-pln.propMC.proton_engine    = 'TOPAS'; %Requires separate topas installation
 % pln.propMC.proton_engine    = 'MCsquare';
+pln.propMC.proton_engine    = 'TOPAS'; %Requires separate topas installation
+pln.propMC.uncQuantParam    = [0.01, 3.5];
+% uncQuantParam(1): relative energy error/spread (relative to mean energy)
+% uncQuantParam(2): absolut spot size error (added in quadrature)
+% uncQuantParam(3): beam divergence  (optional, default = 0)
+% uncQuantParam(4): beam correlation (optional, default = 0)
+
 
 %Enable LET calculation - Does not work yet for MCsquare data
 pln.propDoseCalc.calcLET    = false;

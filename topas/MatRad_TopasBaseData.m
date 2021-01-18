@@ -41,17 +41,31 @@ classdef MatRad_TopasBaseData < MatRad_MCemittanceBaseData
             obj = obj@MatRad_MCemittanceBaseData(varargin{constArguments});           
         end
         
-        function obj = uncQuant(obj, errorEnergy, errorSigmaXY, div, corr)
+        function obj = uncQuant(obj, uncQuantParam)
             % alter exisitning TOPAS MC parameterization for uncertainty
-            % Quantification, errorEnergy is relative (0 to 1), 
-            % errorSigmaXY (is added in quadrature)
+            % Quantification, uncQuantParam(1) = errorEnergy is relative 
+            % (0 to 1), uncQuantParam(2) = errorSigmaXY (is added in 
+            % quadrature), uncQuantParam(3) = beam divergence (optional),
+            % uncQuantParam(4) = beam correlation (optional)
             
             % assign default values to beam divergence and correlation
-            if nargin < 4
+            if size(uncQuantParam,2) < 2 || size(uncQuantParam,2) > 4
+                error('Wrong number of parameters for uncertainty Quantification!'); 
+            elseif size(uncQuantParam,2) < 3
+                errorEnergy = uncQuantParam(1);
+                errorSigmaXY = uncQuantParam(2);
                 div = 0;
                 corr = 0;
-            elseif nargin < 5
+            elseif size(uncQuantParam,2) < 4
+                errorEnergy = uncQuantParam(1);
+                errorSigmaXY = uncQuantParam(2);
+                div = uncQuantParam(3);
                 corr = 0;
+            else
+                errorEnergy = uncQuantParam(1);
+                errorSigmaXY = uncQuantParam(2);
+                div = uncQuantParam(3);
+                corr = uncQuantParam(4);
             end
             
             
@@ -62,7 +76,7 @@ classdef MatRad_TopasBaseData < MatRad_MCemittanceBaseData
                 if errorEnergy < 0 || errorEnergy > 1
                 % check whether energy error is reasonable
 
-                	matRad_cfg.dispError('Selected invalid energy error in uncertainty Quantification!'); 
+                	error('Selected invalid energy error in uncertainty Quantification!'); 
                 else
                     obj.monteCarloData(i).EnergySpread = obj.monteCarloData(i).MeanEnergy * errorEnergy;
                 end

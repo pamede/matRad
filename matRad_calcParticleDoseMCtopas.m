@@ -88,7 +88,7 @@ topasConfig = MatRad_TopasConfig();
 topasBaseData = MatRad_TopasBaseData(machine,stf);%,TopasConfig);
 
 % adjust parameterization for uncertainty quantification
-topasBaseData = topasBaseData.uncQuant(0.01, 5);
+topasBaseData = topasBaseData.uncQuant(pln.propMC.uncQuantParam);
 
 %Collect weights
 w = zeros(sum([stf(:).totalNumOfBixels]),1);
