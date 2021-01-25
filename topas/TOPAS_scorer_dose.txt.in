@@ -8,6 +8,17 @@ s:Sc/Patient/Tally_DoseToMedium/IfOutputFileAlreadyExists = "Overwrite" # "Exit"
 b:Sc/Patient/Tally_DoseToMedium/OutputToConsole = "False"
 s:Sc/Patient/Tally_DoseToMedium/OutputFile = Sim/ScoreLabel + "_physicalDose"
 
+
+s:Ge/IC/Type = "TsBox"
+s:Ge/IC/Parent="Nozzle"
+#b:Ge/IC/IsParallel = "True"
+s:Ge/IC/Material=Ge/World/Material
+d:Ge/IC/HLX = 25. cm
+d:Ge/IC/HLY = 25. cm
+d:Ge/IC/HLZ = 0.001 mm * Sim/HalfValue
+d:Ge/IC/TransZ = Ge/IC/HLZ mm
+
+
 # SCORERS
 s:Sc/IC/Quantity = "SurfaceTrackCount"
 s:Sc/IC/OutputType = "csv" # "csv" "binary" "Root" "Xml" or "DICOM"
@@ -24,3 +35,4 @@ s:Sc/Dose/Component = "Patient"
 sv:Sc/Dose/Report = 1 "Sum"
 s:Sc/Dose/IfOutputFileAlreadyExists = "Overwrite"
 s:Sc/Dose/OutputFile = Sim/PlanLabel + "_dose"
+

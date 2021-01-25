@@ -399,6 +399,8 @@ classdef MatRad_TopasConfig < handle
                 
                 historyCount(beamIx) = uint32(obj.fracHistories * nBeamParticlesTotal(beamIx) / obj.numOfRuns);
                 
+                
+                
                 while sum([dataTOPAS.current]) ~= historyCount(beamIx)
                     % Randomly pick an index with the weigth given by the current
                     idx = 1:length(dataTOPAS);
@@ -427,7 +429,10 @@ classdef MatRad_TopasConfig < handle
                 %write TOPAS data base file
                 fieldSetupFileName = sprintf('beamSetup_%s_field%d.txt',obj.label,beamIx);
                 fileID = fopen(fullfile(obj.workingDir,fieldSetupFileName),'w');
-                obj.writeFieldHeader(fileID,beamIx);                
+                obj.writeFieldHeader(fileID,beamIx);  
+                
+                
+                fprintf(fileID,'i:Sc/Dose/BeamNumber = %i \n',beamIx);
                 
                 %Write modality specific info
                 switch stf(beamIx).radiationMode

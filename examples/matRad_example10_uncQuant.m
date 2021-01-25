@@ -29,8 +29,8 @@ pln.numOfFractions  = 1;
 % beam geometry settings
 pln.propStf.bixelWidth              = 10; % [mm] / also corresponds to lateral spot spacing for particles
 pln.propStf.longitudinalSpotSpacing = 10;
-pln.propStf.gantryAngles            = 0; % [?] 
-pln.propStf.couchAngles             = 0; % [?]
+pln.propStf.gantryAngles            = [0, 90]; % [?] 
+pln.propStf.couchAngles             = [0, 90]; % [?]
 pln.propStf.numOfBeams              = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter               = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
                             
@@ -82,7 +82,7 @@ resultGUI = matRad_fluenceOptimization(dij,cst,pln); %Optimize
 
 %% MC calculation
 %resultGUI_recalc = matRad_calcDoseDirect(ct,stf,pln,cst,resultGUI.w);       %Recalculate particle dose analytically
-resultGUI_recalc = matRad_calcDoseDirectMC(ct,stf,pln,cst,resultGUI.w,1e6);  %Recalculate particle dose with MC algorithm
+resultGUI_recalc = matRad_calcDoseDirectMC(ct,stf,pln,cst,resultGUI.w,1000);  %Recalculate particle dose with MC algorithm
 resultGUI.physicalDose_MC = resultGUI_recalc.physicalDose;
 
 
