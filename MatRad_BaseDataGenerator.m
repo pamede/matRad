@@ -87,7 +87,13 @@ classdef MatRad_BaseDataGenerator
             for i=-ceil(height_corr/2)+1:floor(height_corr/2)
                 for j=-ceil(width_corr/2):floor(width_corr/2)
                     for k=-ceil(depth_corr/2):floor(depth_corr/2)
-                        mask(centerP_corr(1)+i,centerP_corr(2)+j,centerP_corr(3)+k) = 1;
+                        coordX  = centerP_corr(1) + i;
+                        coordY  = centerP_corr(2) + j;
+                        coordZ  = centerP_corr(3) + k;
+                        coordX(coordX<1) = 1;  
+                        coordY(coordY<1) = 1;  
+                        coordZ(coordZ<1) = 1; 
+                        mask(coordX, coordY, coordZ) = 1;
                     end
                 end
             end
@@ -95,10 +101,97 @@ classdef MatRad_BaseDataGenerator
             
             obj.ct  = ct;
             obj.cst = cst;
-        end    
+        end   
         
-        function fitMachine = fitAnalyticalData(obj, nozzleToIso, SAD, focalPoints, ...
-                            energySpectrum, emittanceData, fitEnergies)
+        function fitMachine = fitAnalyticalDataViaFile(obj, nozzleToIso, SAD, ...
+                            givenFile, fitEnergies, N)
+            
+            filepath = ['MCsquare\bin\BDL\' givenFile];
+
+            pln.radiationMode   = 'protons';     % either photons / protons / carbon
+            pln.machine         = 'generic_MCsquare';
+
+            pln.propStf.bixelWidth      = 500; % [mm] / also corresponds to lateral spot spacing for particles
+            pln.propStf.longitudinalSpotSpacing = 500;
+            pln.propStf.gantryAngles    = 0; % [?] 
+            pln.propStf.couchAngles     = 0; % [?]
+            pln.propStf.numOfBeams      = numel(pln.propStf.gantryAngles);
+            pln.propStf.isoCenter       = [obj.ct.cubeDim(2) / 2 * obj.ct.resolution.y,0, obj.ct.cubeDim(3) / 2 * obj.ct.resolution.z];
+            pln.propDoseCalc.doseGrid.resolution.x = obj.ct.resolution.x; % [mm]
+            pln.propDoseCalc.doseGrid.resolution.y = obj.ct.resolution.y; % [mm]
+            pln.propDoseCalc.doseGrid.resolution.z = obj.ct.resolution.z; % [mm]
+
+            % optimization settings
+            pln.propOpt.optimizer       = 'IPOPT';
+            pln.propOpt.bioOptimization = 'none'; % none: physical optimization;             const_RBExD; constant RBE of 1.1;
+                                                  % LEMIV_effect: effect-based optimization; LEMIV_RBExD: optimization of RBE-weighted dose
+            pln.propOpt.runDAO          = false;  % 1/true: run DAO, 0/false: don't / will be ignored for particles
+            pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't / will be ignored for particles and also triggered by runDAO below
+
+            %% generate steering file
+            stf = matRad_generateStf(obj.ct,obj.cst,pln);
+            
+            dataMC = readtable(filepath);             
+            dataMC = dataMC{11:end,:};
+            tmp = [];
+            for i = 1:size(dataMC,1)    
+                tmp = [tmp; strsplit(dataMC{i})];
+            end
+            energyMC    = str2double(tmp(:,1));
+            spotMC      = (str2double(tmp(:,6)) + str2double(tmp(:,9)))  / 2;
+            divMC       = (str2double(tmp(:,7)) + str2double(tmp(:,10))) / 2;
+            corMC       = (str2double(tmp(:,8)) + str2double(tmp(:,11))) / 2;
+            spread      = str2double(tmp(:,3));
+            
+            count = 1;
+            for currentEnergy = fitEnergies
+                
+                mcData.divNozzle = interp1(energyMC,divMC,currentEnergy); 
+                mcData.corNozzle = interp1(energyMC,corMC,currentEnergy); 
+                mcData.spotNozzle = interp1(energyMC,spotMC,currentEnergy);
+                mcData.z = nozzleToIso;
+    
+                stf.ray.energy = currentEnergy;
+                resultGUI = matRad_calcDoseDirectMC(obj.ct,stf,pln,obj.cst,ones(sum(stf(:).totalNumOfBixels),1), ...
+                                                    N,'fitFile.txt');
+                
+                tmpMachine = matRad_fitBaseData(resultGUI.physicalDose, obj.ct.resolution, currentEnergy, mcData);
+                
+                tmpMachine.energySpectrum.mean = currentEnergy;
+                tmpMachine.energySpectrum.spread = interp1(energyMC,spread,currentEnergy);                
+                tmpMachine.initFocus.Emittance.spotsize.x1 = mcData.spotNozzle;
+                tmpMachine.initFocus.Emittance.spotsize.y1 = mcData.spotNozzle;
+                tmpMachine.initFocus.Emittance.spotsize.x2 = mcData.spotNozzle;
+                tmpMachine.initFocus.Emittance.spotsize.y2 = mcData.spotNozzle;
+                tmpMachine.initFocus.Emittance.divergence.x1 = mcData.divNozzle;
+                tmpMachine.initFocus.Emittance.divergence.y1 = mcData.divNozzle;
+                tmpMachine.initFocus.Emittance.divergence.x2 = mcData.divNozzle;
+                tmpMachine.initFocus.Emittance.divergence.y2 = mcData.divNozzle;
+                tmpMachine.initFocus.Emittance.correlation.x1 = mcData.corNozzle;
+                tmpMachine.initFocus.Emittance.correlation.y1 = mcData.corNozzle;
+                tmpMachine.initFocus.Emittance.correlation.x2 = mcData.corNozzle;
+                tmpMachine.initFocus.Emittance.correlation.y2 = mcData.corNozzle;
+                tmpMachine.initFocus.Emittance.weight.first   = 1;
+                tmpMachine.initFocus.Emittance.weight.second = 2;
+                
+                fitMachine.data(count) = tmpMachine;
+
+                count = count + 1;
+            end
+            
+            fitMachine.meta.radiationMode = 'protons';
+            fitMachine.meta.dataType = 'doubleGauss';
+            fitMachine.meta.created_on = date;
+            fitMachine.meta.created_by = 'Paul Anton Meder';
+            fitMachine.meta.SAD = SAD;
+            fitMachine.meta.BAMStoIsoDist = nozzleToIso;
+            fitMachine.meta.machine = 'Generic';
+            fitMachine.meta.LUT_bxWidthminFWHM = [1, Inf; 8 ,8];
+            fitMachine.meta.fitAirOffset = nozzleToIso;
+        end
+        
+        function fitMachine = fitAnalyticalDataViaEmittance(obj, nozzleToIso, SAD, focalPoints, ...
+                            energySpectrum, emittanceData, fitEnergies, N)
                         
             obj = interpolateToSpacing(obj, energySpectrum, emittanceData, fitEnergies);
             
@@ -147,7 +240,7 @@ classdef MatRad_BaseDataGenerator
     
                 stf.ray.energy = currentEnergy;
                 resultGUI = matRad_calcDoseDirectMC(obj.ct,stf,pln,obj.cst,ones(sum(stf(:).totalNumOfBixels),1), ...
-                                                    1e5,'fitFile.txt');
+                                                    N,'fitFile.txt');
                 
                 tmpMachine = matRad_fitBaseData(resultGUI.physicalDose, obj.ct.resolution, currentEnergy, mcData);
                 
